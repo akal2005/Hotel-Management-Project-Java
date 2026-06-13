@@ -13,6 +13,15 @@ const CustomerPortal = () => {
   const [complaints, setComplaints] = useState([]);
   const [reviews, setReviews] = useState([]);
 
+  // Dynamic location selector states
+  const [countries, setCountries] = useState([]);
+  const [statesList, setStatesList] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedState, setSelectedState] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [filteredHotels, setFilteredHotels] = useState([]);
+
   // Form states
   const [newComplaintSubject, setNewComplaintSubject] = useState('');
   const [newComplaintDesc, setNewComplaintDesc] = useState('');
@@ -39,6 +48,57 @@ const CustomerPortal = () => {
     };
     fetchHotels();
   }, []);
+
+  // Compute unique countries
+  useEffect(() => {
+    if (hotels.length > 0) {
+      const uniqueCountries = [...new Set(hotels.map(h => h.country))];
+      setCountries(uniqueCountries);
+      setSelectedCountry(uniqueCountries[0] || '');
+    }
+  }, [hotels]);
+
+  // Compute unique states when selected country changes
+  useEffect(() => {
+    if (selectedCountry) {
+      const match = hotels.filter(h => h.country === selectedCountry);
+      const uniqueStates = [...new Set(match.map(h => h.state))];
+      setStatesList(uniqueStates);
+      setSelectedState(uniqueStates[0] || '');
+    } else {
+      setStatesList([]);
+      setSelectedState('');
+    }
+  }, [selectedCountry, hotels]);
+
+  // Compute unique cities when selected state changes
+  useEffect(() => {
+    if (selectedCountry && selectedState) {
+      const match = hotels.filter(h => h.country === selectedCountry && h.state === selectedState);
+      const uniqueCities = [...new Set(match.map(h => h.city))];
+      setCitiesList(uniqueCities);
+      setSelectedCity(uniqueCities[0] || '');
+    } else {
+      setCitiesList([]);
+      setSelectedCity('');
+    }
+  }, [selectedState, selectedCountry, hotels]);
+
+  // Compute hotels when selected city changes
+  useEffect(() => {
+    if (selectedCountry && selectedState && selectedCity) {
+      const match = hotels.filter(h => h.country === selectedCountry && h.state === selectedState && h.city === selectedCity);
+      setFilteredHotels(match);
+      if (match.length > 0) {
+        setSelectedHotel(match[0].id);
+      } else {
+        setSelectedHotel('');
+      }
+    } else {
+      setFilteredHotels([]);
+      setSelectedHotel('');
+    }
+  }, [selectedCity, selectedState, selectedCountry, hotels]);
 
   // Fetch lists based on active tab
   const loadBookings = useCallback(async () => {
@@ -175,10 +235,34 @@ const CustomerPortal = () => {
             <h3 className="card-title">Search Room Availability</h3>
             <form onSubmit={handleSearch} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', alignItems: 'end' }}>
               <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Country</label>
+                <select className="form-control" value={selectedCountry} onChange={(e) => setSelectedCountry(e.target.value)}>
+                  {countries.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">State</label>
+                <select className="form-control" value={selectedState} onChange={(e) => setSelectedState(e.target.value)}>
+                  {statesList.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">City/District</label>
+                <select className="form-control" value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)}>
+                  {citiesList.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Select Hotel</label>
                 <select className="form-control" value={selectedHotel} onChange={(e) => setSelectedHotel(e.target.value)}>
-                  {hotels.map((h) => (
-                    <option key={h.id} value={h.id}>{h.name} - {h.city}</option>
+                  {filteredHotels.map((h) => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
                   ))}
                 </select>
               </div>
@@ -190,7 +274,7 @@ const CustomerPortal = () => {
                 <label className="form-label">Check-out Date</label>
                 <input type="date" className="form-control" value={checkOut} onChange={(e) => setCheckOut(e.target.value)} required />
               </div>
-              <button type="submit" className="btn btn-primary">Search Availability</button>
+              <button type="submit" className="btn btn-primary" style={{ height: '42px' }}>Search Availability</button>
             </form>
           </div>
 

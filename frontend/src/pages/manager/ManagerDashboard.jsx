@@ -14,6 +14,13 @@ const ManagerDashboard = () => {
   const [assigneeId, setAssigneeId] = useState('');
   const [resolutionText, setResolutionText] = useState('');
 
+  // Form states for adding a room
+  const [categories, setCategories] = useState([]);
+  const [hotels, setHotels] = useState([]);
+  const [newRoomNumber, setNewRoomNumber] = useState('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState('');
+  const [selectedHotelId, setSelectedHotelId] = useState('');
+
   const toast = useToast();
 
   const loadAnalytics = useCallback(async () => {
@@ -61,12 +68,59 @@ const ManagerDashboard = () => {
     }
   }, []);
 
+  const loadCategories = useCallback(async () => {
+    try {
+      const res = await api.get('/room-categories');
+      if (res.data.success) {
+        setCategories(res.data.data);
+        if (res.data.data.length > 0) setSelectedCategoryId(res.data.data[0].id);
+      }
+    } catch (err) {
+      console.error('Error loading room categories', err);
+    }
+  }, []);
+
+  const loadHotels = useCallback(async () => {
+    try {
+      const res = await api.get('/hotels');
+      if (res.data.success) {
+        setHotels(res.data.data);
+        if (res.data.data.length > 0) setSelectedHotelId(res.data.data[0].id);
+      }
+    } catch (err) {
+      console.error('Error loading hotels list', err);
+    }
+  }, []);
+
   useEffect(() => {
     loadAnalytics();
     loadComplaints();
     loadStaff();
     loadRooms();
-  }, [loadAnalytics, loadComplaints, loadStaff, loadRooms]);
+    loadCategories();
+    loadHotels();
+  }, [loadAnalytics, loadComplaints, loadStaff, loadRooms, loadCategories, loadHotels]);
+
+  const handleCreateRoom = async (e) => {
+    e.preventDefault();
+    if (!newRoomNumber || !selectedCategoryId || !selectedHotelId) {
+      return toast.error('Please specify room number, category, and hotel');
+    }
+    try {
+      const res = await api.post('/rooms', {
+        room_number: newRoomNumber,
+        category_id: selectedCategoryId,
+        hotel_id: selectedHotelId,
+      });
+      if (res.data.success) {
+        toast.success(`Room ${newRoomNumber} added successfully!`);
+        setNewRoomNumber('');
+        loadRooms();
+      }
+    } catch (err) {
+      toast.error('Failed to add room. Room number may already exist.');
+    }
+  };
 
   const handleAssignComplaint = async (e) => {
     e.preventDefault();
@@ -158,37 +212,70 @@ const ManagerDashboard = () => {
 
       {/* Tab: Rooms Status */}
       {activeTab === 'rooms' && (
-        <div className="card">
-          <h3 className="card-title">Room Inventory Board</h3>
-          <div className="table-responsive">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Room No</th>
-                  <th>Category</th>
-                  <th>Occupancy</th>
-                  <th>Price</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rooms.map((room) => (
-                  <tr key={room.id}>
-                    <td style={{ fontWeight: 'bold' }}>Room {room.room_number}</td>
-                    <td>{room.category_name}</td>
-                    <td>{room.max_occupancy} guests</td>
-                    <td>${room.base_price}</td>
-                    <td>
-                      <span className={`badge badge-${
-                        room.status === 'available' ? 'success' :
-                        room.status === 'occupied' ? 'info' :
-                        room.status === 'dirty' ? 'danger' : 'warning'
-                      }`}>{room.status}</span>
-                    </td>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Add Room Form Card */}
+          <div className="card">
+            <h3 className="card-title">Add New Room</h3>
+            <form onSubmit={handleCreateRoom} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', alignItems: 'end' }}>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Room Number</label>
+                <input type="text" className="form-control" placeholder="e.g. 401" value={newRoomNumber} onChange={(e) => setNewRoomNumber(e.target.value)} required />
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Select Hotel</label>
+                <select className="form-control" value={selectedHotelId} onChange={(e) => setSelectedHotelId(e.target.value)} required>
+                  {hotels.map((h) => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group" style={{ marginBottom: 0 }}>
+                <label className="form-label">Room Category</label>
+                <select className="form-control" value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} required>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name} (${cat.base_price}/night)
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ height: '42px' }}>Add Room</button>
+            </form>
+          </div>
+
+          {/* Room Inventory Board Card */}
+          <div className="card">
+            <h3 className="card-title">Room Inventory Board</h3>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Room No</th>
+                    <th>Category</th>
+                    <th>Occupancy</th>
+                    <th>Price</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rooms.map((room) => (
+                    <tr key={room.id}>
+                      <td style={{ fontWeight: 'bold' }}>Room {room.room_number}</td>
+                      <td>{room.category_name}</td>
+                      <td>{room.max_occupancy} guests</td>
+                      <td>${room.base_price}</td>
+                      <td>
+                        <span className={`badge badge-${
+                          room.status === 'available' ? 'success' :
+                          room.status === 'occupied' ? 'info' :
+                          room.status === 'dirty' ? 'danger' : 'warning'
+                        }`}>{room.status}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

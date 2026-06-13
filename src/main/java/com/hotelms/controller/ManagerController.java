@@ -5,6 +5,7 @@ import com.hotelms.model.*;
 import com.hotelms.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -34,6 +35,9 @@ public class ManagerController {
 
     @Autowired
     private HotelRepository hotelRepository;
+
+    @Autowired
+    private RoomCategoryRepository roomCategoryRepository;
 
     // Analytics Dashboard
     @GetMapping("/analytics/overview")
@@ -214,5 +218,47 @@ public class ManagerController {
     @GetMapping("/hotels")
     public ResponseEntity<?> listHotels() {
         return ResponseEntity.ok(new ApiResponse(true, "Hotels loaded", hotelRepository.findAll()));
+    }
+
+    // Create new hotel (Admin only)
+    @PostMapping("/hotels")
+    public ResponseEntity<?> createHotel(@RequestBody Hotel hotel) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!user.getRole().getName().equals("admin")) {
+            return ResponseEntity.status(403)
+                    .body(new ApiResponse(false, "Only administrators can add hotels"));
+        }
+        if (hotel.getName() == null || hotel.getCity() == null || hotel.getState() == null || hotel.getCountry() == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiResponse(false, "Name, City, State, and Country are required"));
+        }
+        Hotel saved = hotelRepository.save(hotel);
+        return ResponseEntity.status(201)
+                .body(new ApiResponse(true, "Hotel created successfully", saved));
+    }
+
+    // List all room categories
+    @GetMapping("/room-categories")
+    public ResponseEntity<?> listCategories() {
+        return ResponseEntity.ok(new ApiResponse(true, "Room categories loaded", roomCategoryRepository.findAll()));
+    }
+
+    // Create a new room (Manager/Admin only)
+    @PostMapping("/rooms")
+    public ResponseEntity<?> createRoom(@RequestBody Dto.RoomCreationRequest request) {
+        Hotel hotel = hotelRepository.findById(request.hotel_id)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+        RoomCategory category = roomCategoryRepository.findById(request.category_id)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        Room room = new Room();
+        room.setHotel(hotel);
+        room.setCategory(category);
+        room.setRoomNumber(request.room_number);
+        room.setStatus("available");
+
+        Room saved = roomRepository.save(room);
+        return ResponseEntity.status(201)
+                .body(new ApiResponse(true, "Room created successfully", saved));
     }
 }

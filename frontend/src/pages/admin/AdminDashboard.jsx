@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { api } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
@@ -16,6 +17,18 @@ const AdminDashboard = () => {
   const [newPhone, setNewPhone] = useState('');
   const [newRole, setNewRole] = useState('receptionist');
 
+  // Form states for creating hotel
+  const [hotelsList, setHotelsList] = useState([]);
+  const [hotelName, setHotelName] = useState('');
+  const [hotelAddress, setHotelAddress] = useState('');
+  const [hotelCity, setHotelCity] = useState('');
+  const [hotelState, setHotelState] = useState('');
+  const [hotelCountry, setHotelCountry] = useState('');
+  const [hotelPhone, setHotelPhone] = useState('');
+  const [hotelEmail, setHotelEmail] = useState('');
+  const [hotelDesc, setHotelDesc] = useState('');
+
+  const location = useLocation();
   const toast = useToast();
 
   const loadUsers = useCallback(async () => {
@@ -43,13 +56,42 @@ const AdminDashboard = () => {
     }
   }, []);
 
+  const loadHotels = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await api.get('/hotels');
+      if (res.data.success) {
+        setHotelsList(res.data.data);
+      }
+    } catch (err) {
+      toast.error('Failed to load hotel list');
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+
+  // Synchronize route paths to activeTab
+  useEffect(() => {
+    if (location.pathname.endsWith('/logs')) {
+      setActiveTab('logs');
+    } else if (location.pathname.endsWith('/hotels')) {
+      setActiveTab('hotels');
+    } else if (location.pathname.endsWith('/create')) {
+      setActiveTab('create');
+    } else {
+      setActiveTab('users');
+    }
+  }, [location]);
+
   useEffect(() => {
     if (activeTab === 'users') {
       loadUsers();
     } else if (activeTab === 'logs') {
       loadLogs();
+    } else if (activeTab === 'hotels') {
+      loadHotels();
     }
-  }, [activeTab, loadUsers, loadLogs]);
+  }, [activeTab, loadUsers, loadLogs, loadHotels]);
 
   // Create staff user
   const handleCreateStaff = async (e) => {
@@ -93,6 +135,38 @@ const AdminDashboard = () => {
     }
   };
 
+  // Create hotel
+  const handleCreateHotel = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.post('/hotels', {
+        name: hotelName,
+        address: hotelAddress,
+        city: hotelCity,
+        state: hotelState,
+        country: hotelCountry,
+        phone: hotelPhone,
+        email: hotelEmail,
+        description: hotelDesc,
+      });
+      if (res.data.success) {
+        toast.success(`Hotel ${hotelName} created successfully!`);
+        setHotelName('');
+        setHotelAddress('');
+        setHotelCity('');
+        setHotelState('');
+        setHotelCountry('');
+        setHotelPhone('');
+        setHotelEmail('');
+        setHotelDesc('');
+        loadHotels();
+        setActiveTab('hotels');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create hotel');
+    }
+  };
+
   return (
     <div>
       {/* Tab bar header */}
@@ -102,6 +176,9 @@ const AdminDashboard = () => {
         </button>
         <button className={`btn ${activeTab === 'create' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('create')}>
           Add Staff Account
+        </button>
+        <button className={`btn ${activeTab === 'hotels' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('hotels')}>
+          Hotel Settings
         </button>
         <button className={`btn ${activeTab === 'logs' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('logs')}>
           System Audit Logs
@@ -212,6 +289,100 @@ const AdminDashboard = () => {
               Create Staff Account
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Tab: Hotel Management */}
+      {activeTab === 'hotels' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Form to add a hotel */}
+          <div className="card">
+            <h3 className="card-title">Add New Hotel / Branch</h3>
+            <form onSubmit={handleCreateHotel}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Hotel Name</label>
+                  <input type="text" className="form-control" placeholder="e.g. Marina View Palace" value={hotelName} onChange={(e) => setHotelName(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Country</label>
+                  <input type="text" className="form-control" placeholder="e.g. India" value={hotelCountry} onChange={(e) => setHotelCountry(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">State</label>
+                  <input type="text" className="form-control" placeholder="e.g. Tamil Nadu" value={hotelState} onChange={(e) => setHotelState(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">City</label>
+                  <input type="text" className="form-control" placeholder="e.g. Chennai" value={hotelCity} onChange={(e) => setHotelCity(e.target.value)} required />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Address</label>
+                <input type="text" className="form-control" placeholder="e.g. 5 Marina Beach Road" value={hotelAddress} onChange={(e) => setHotelAddress(e.target.value)} required />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Phone</label>
+                  <input type="tel" className="form-control" placeholder="e.g. +91 44 2200 1122" value={hotelPhone} onChange={(e) => setHotelPhone(e.target.value)} />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email</label>
+                  <input type="email" className="form-control" placeholder="e.g. contact@hotelms.com" value={hotelEmail} onChange={(e) => setHotelEmail(e.target.value)} />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea className="form-control" rows="3" placeholder="Hotel description..." value={hotelDesc} onChange={(e) => setHotelDesc(e.target.value)}></textarea>
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }}>
+                Create Hotel Branch
+              </button>
+            </form>
+          </div>
+
+          {/* List of existing hotels */}
+          <div className="card">
+            <h3 className="card-title">Registered Hotel Branches</h3>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Hotel Name</th>
+                    <th>Location</th>
+                    <th>Contact Info</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hotelsList.length === 0 ? (
+                    <tr>
+                      <td colSpan="4" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No hotel branches registered yet.</td>
+                    </tr>
+                  ) : (
+                    hotelsList.map((hotel) => (
+                      <tr key={hotel.id}>
+                        <td style={{ fontWeight: '600' }}>{hotel.name}</td>
+                        <td>
+                          <div>{hotel.address}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{hotel.city}, {hotel.state}, {hotel.country}</div>
+                        </td>
+                        <td>
+                          <div>{hotel.phone || 'N/A'}</div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{hotel.email || 'N/A'}</div>
+                        </td>
+                        <td style={{ maxWidth: '300px', fontSize: '13px', color: 'var(--text-secondary)' }}>{hotel.description}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 

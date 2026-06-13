@@ -100,6 +100,12 @@ public class Dto {
         public Boolean is_active;
     }
 
+    public static class RoomCreationRequest {
+        public int hotel_id;
+        public int category_id;
+        public String room_number;
+    }
+
     public static class AssignRequest {
         public int assigned_to;
     }
