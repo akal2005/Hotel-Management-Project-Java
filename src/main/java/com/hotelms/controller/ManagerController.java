@@ -32,6 +32,9 @@ public class ManagerController {
     @Autowired
     private ReviewRepository reviewRepository;
 
+    @Autowired
+    private HotelRepository hotelRepository;
+
     // Analytics Dashboard
     @GetMapping("/analytics/overview")
     public ResponseEntity<?> getAnalytics() {
@@ -205,5 +208,11 @@ public class ManagerController {
         });
 
         return ResponseEntity.ok(new ApiResponse(true, "Review submitted successfully"));
+    }
+
+    // List all hotels for booking dropdowns
+    @GetMapping("/hotels")
+    public ResponseEntity<?> listHotels() {
+        return ResponseEntity.ok(new ApiResponse(true, "Hotels loaded", hotelRepository.findAll()));
     }
 }
