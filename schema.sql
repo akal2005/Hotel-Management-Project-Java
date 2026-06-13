@@ -215,13 +215,13 @@ INSERT INTO roles (id, name, description) VALUES
 (5, 'housekeeping', 'Cleaning staff assigned room maintenance');
 
 -- Seed Users (Passwords are bcrypted hashes of 'password123')
--- Hash: $2a$12$K8K4H6/tC0w7t44Z01n0m.43nN85q0q5HlD0q5HlD0q5HlD0q5HlD (Dev password123 hash)
+-- Hash: $2a$12$CYzizWHmk6KHJ6BwEB.46eL5z1KzYfIS9luuyw2ffL.FO8p/aIXFG (Dev password123 hash)
 INSERT INTO users (id, role_id, first_name, last_name, email, password_hash, phone, is_active, email_verified) VALUES
-(1, 1, 'System', 'Admin', 'admin@hotelms.com', '$2a$12$K8K4H6/tC0w7t44Z01n0m.43nN85q0q5HlD0q5HlD0q5HlD0q5HlD', '9876543210', TRUE, TRUE),
-(2, 2, 'Jane', 'Manager', 'manager@hotelms.com', '$2a$12$K8K4H6/tC0w7t44Z01n0m.43nN85q0q5HlD0q5HlD0q5HlD0q5HlD', '9876543211', TRUE, TRUE),
-(3, 3, 'Robert', 'Receptionist', 'reception@hotelms.com', '$2a$12$K8K4H6/tC0w7t44Z01n0m.43nN85q0q5HlD0q5HlD0q5HlD0q5HlD', '9876543212', TRUE, TRUE),
-(4, 4, 'John', 'Customer', 'guest@example.com', '$2a$12$K8K4H6/tC0w7t44Z01n0m.43nN85q0q5HlD0q5HlD0q5HlD0q5HlD', '9876543213', TRUE, TRUE),
-(5, 5, 'Mary', 'Housekeeper', 'housekeeping@hotelms.com', '$2a$12$K8K4H6/tC0w7t44Z01n0m.43nN85q0q5HlD0q5HlD0q5HlD0q5HlD', '9876543214', TRUE, TRUE);
+(1, 1, 'System', 'Admin', 'admin@hotelms.com', '$2a$12$CYzizWHmk6KHJ6BwEB.46eL5z1KzYfIS9luuyw2ffL.FO8p/aIXFG', '9876543210', TRUE, TRUE),
+(2, 2, 'Jane', 'Manager', 'manager@hotelms.com', '$2a$12$CYzizWHmk6KHJ6BwEB.46eL5z1KzYfIS9luuyw2ffL.FO8p/aIXFG', '9876543211', TRUE, TRUE),
+(3, 3, 'Robert', 'Receptionist', 'reception@hotelms.com', '$2a$12$CYzizWHmk6KHJ6BwEB.46eL5z1KzYfIS9luuyw2ffL.FO8p/aIXFG', '9876543212', TRUE, TRUE),
+(4, 4, 'John', 'Customer', 'guest@example.com', '$2a$12$CYzizWHmk6KHJ6BwEB.46eL5z1KzYfIS9luuyw2ffL.FO8p/aIXFG', '9876543213', TRUE, TRUE),
+(5, 5, 'Mary', 'Housekeeper', 'housekeeping@hotelms.com', '$2a$12$CYzizWHmk6KHJ6BwEB.46eL5z1KzYfIS9luuyw2ffL.FO8p/aIXFG', '9876543214', TRUE, TRUE);
 
 -- Seed Customers
 INSERT INTO customers (id, user_id, date_of_birth, nationality, id_type, id_number, address, city, country, preferred_room_type, special_requests) VALUES
