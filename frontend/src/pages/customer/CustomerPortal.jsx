@@ -374,13 +374,28 @@ const CustomerPortal = () => {
 
           {/* Hotel Information Card */}
           {selectedHotelObj && (
-            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '4px solid var(--accent)' }}>
-              <h4 style={{ margin: 0, color: 'var(--accent)', fontSize: '18px' }}>{selectedHotelObj.name} Details</h4>
-              <p style={{ margin: '4px 0', fontSize: '14px', lineHeight: '1.5' }}>{selectedHotelObj.description}</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px' }}>
-                <div>📍 <strong>Address:</strong> {selectedHotelObj.address}, {selectedHotelObj.city}, {selectedHotelObj.state}, {selectedHotelObj.country}</div>
-                <div>📞 <strong>Phone:</strong> {selectedHotelObj.phone || 'N/A'}</div>
-                <div>✉️ <strong>Email:</strong> {selectedHotelObj.email || 'N/A'}</div>
+            <div className="card" style={{ marginBottom: '24px', overflow: 'hidden', padding: 0 }}>
+              <div style={{
+                height: '200px',
+                background: `linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.7)), url('/hotel_lobby.png') no-repeat center center`,
+                backgroundSize: 'cover',
+                display: 'flex',
+                alignItems: 'flex-end',
+                padding: '20px'
+              }}>
+                <h4 style={{ margin: 0, color: 'white', fontSize: '24px', textShadow: '0 2px 4px rgba(0,0,0,0.8)' }}>
+                  {selectedHotelObj.name}
+                </h4>
+              </div>
+              <div style={{ padding: '24px' }}>
+                <p style={{ margin: '0 0 16px 0', fontSize: '15px', lineHeight: '1.6', color: 'var(--text-secondary)' }}>
+                  {selectedHotelObj.description}
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '14px', color: 'var(--text-primary)' }}>
+                  <div>📍 <strong>Address:</strong> {selectedHotelObj.address}, {selectedHotelObj.city}, {selectedHotelObj.state}, {selectedHotelObj.country}</div>
+                  <div>📞 <strong>Phone:</strong> {selectedHotelObj.phone || 'N/A'}</div>
+                  <div>✉️ <strong>Email:</strong> {selectedHotelObj.email || 'N/A'}</div>
+                </div>
               </div>
             </div>
           )}

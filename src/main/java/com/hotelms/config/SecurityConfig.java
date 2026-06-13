@@ -43,6 +43,7 @@ public class SecurityConfig {
                 .requestMatchers("/uploads/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("admin")
                 .requestMatchers("/api/manager/**").hasRole("manager")
+                .requestMatchers("/api/receptionist/rooms").hasAnyRole("receptionist", "housekeeper", "manager")
                 .requestMatchers("/api/receptionist/**").hasRole("receptionist")
                 .requestMatchers("/api/customer/**").hasRole("customer")
                 .requestMatchers("/api/housekeep/**").hasRole("housekeeper")

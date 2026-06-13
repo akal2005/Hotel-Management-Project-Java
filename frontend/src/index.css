@@ -83,7 +83,8 @@ a:hover {
   align-items: center;
   min-height: 100vh;
   padding: 24px;
-  background: radial-gradient(circle at 50% 50%, #111827 0%, #0b0f19 100%);
+  background: linear-gradient(rgba(11, 15, 25, 0.75), rgba(11, 15, 25, 0.85)), url('/hotel_background.png') no-repeat center center;
+  background-size: cover;
 }
 
 .auth-card {

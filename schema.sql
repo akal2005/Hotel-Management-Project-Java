@@ -214,7 +214,7 @@ INSERT INTO roles (id, name, description) VALUES
 (2, 'manager', 'Hotel Manager overseeing operations, analytics, complaints'),
 (3, 'receptionist', 'Front Desk staff handling check-ins, payments, room reservations'),
 (4, 'customer', 'Registered hotel guest'),
-(5, 'housekeeping', 'Cleaning staff assigned room maintenance');
+(5, 'housekeeper', 'Cleaning staff assigned room maintenance');
 
 -- Seed Users (Passwords are bcrypted hashes of 'password123')
 -- Hash: $2a$12$CYzizWHmk6KHJ6BwEB.46eL5z1KzYfIS9luuyw2ffL.FO8p/aIXFG (Dev password123 hash)
