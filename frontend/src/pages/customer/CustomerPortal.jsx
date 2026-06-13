@@ -174,7 +174,7 @@ const CustomerPortal = () => {
   useEffect(() => {
     if (activeTab === 'book') {
       loadReviews();
-    } else if (activeTab === 'bookings') {
+    } else if (activeTab === 'bookings' || activeTab === 'add_review') {
       loadBookings();
     } else if (activeTab === 'complaints') {
       loadComplaints();
@@ -311,6 +311,14 @@ const CustomerPortal = () => {
         </button>
         <button className={`btn ${activeTab === 'profile' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('profile')}>
           My Profile Settings
+        </button>
+        <button className={`btn ${activeTab === 'add_review' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => {
+          setActiveTab('add_review');
+          if (bookings.length > 0) {
+            setReviewBookingId(bookings[0].id);
+          }
+        }}>
+          Write Review & Rating
         </button>
       </div>
 
@@ -662,6 +670,52 @@ const CustomerPortal = () => {
               Save Profile Changes
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Tab: Write Review from tab bar */}
+      {activeTab === 'add_review' && (
+        <div className="card" style={{ maxWidth: '600px' }}>
+          <h3 className="card-title">Share Your Experience</h3>
+          {bookings.length === 0 ? (
+            <p style={{ color: 'var(--text-secondary)' }}>You don't have any bookings yet. Please book a room first to submit a review.</p>
+          ) : (
+            <form onSubmit={handleAddReview}>
+              <div className="form-group">
+                <label className="form-label">Select Your Booking</label>
+                <select className="form-control" value={reviewBookingId} onChange={(e) => setReviewBookingId(e.target.value)} required>
+                  <option value="">-- Choose Booking --</option>
+                  {bookings.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.booking_ref} - {b.hotel_name} (Room: {b.room_number || 'N/A'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Rating (1 to 5 Stars)</label>
+                <select className="form-control" value={newReviewRating} onChange={(e) => setNewReviewRating(parseInt(e.target.value))}>
+                  <option value="5">⭐⭐⭐⭐⭐ (Excellent)</option>
+                  <option value="4">⭐⭐⭐⭐ (Good)</option>
+                  <option value="3">⭐⭐⭐ (Average)</option>
+                  <option value="2">⭐⭐ (Poor)</option>
+                  <option value="1">⭐ (Terrible)</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Comments</label>
+                <textarea
+                  className="form-control"
+                  rows="4"
+                  placeholder="How was your stay? Let us know what you liked or how we can improve..."
+                  value={newReviewComment}
+                  onChange={(e) => setNewReviewComment(e.target.value)}
+                  required
+                ></textarea>
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }}>Submit Review</button>
+            </form>
+          )}
         </div>
       )}
 

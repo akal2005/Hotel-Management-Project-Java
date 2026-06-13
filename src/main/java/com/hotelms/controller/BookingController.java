@@ -126,6 +126,8 @@ public class BookingController {
             map.put("total_amount", b.getTotalAmount());
             map.put("status", b.getStatus());
             map.put("room_number", b.getRoom() != null ? b.getRoom().getRoomNumber() : null);
+            map.put("hotel_name", b.getHotel() != null ? b.getHotel().getName() : "N/A");
+            map.put("hotel_id", b.getHotel() != null ? b.getHotel().getId() : null);
             responseData.add(map);
         }
 
