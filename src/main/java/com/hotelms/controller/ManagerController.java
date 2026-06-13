@@ -302,7 +302,7 @@ public class ManagerController {
 
     // Create a new room (Manager/Admin only)
     @PostMapping("/rooms")
-    public ResponseEntity<?> createRoom(@RequestBody Dto.RoomCreationRequest request) {
+    public ResponseEntity<?> createRoom(@RequestBody RoomCreationRequest request) {
         Hotel hotel = hotelRepository.findById(request.hotel_id)
                 .orElseThrow(() -> new RuntimeException("Hotel not found"));
         RoomCategory category = roomCategoryRepository.findById(request.category_id)
