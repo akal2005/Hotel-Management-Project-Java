@@ -83,6 +83,7 @@ public class Dto {
         public String check_in_date;
         public String check_out_date;
         public BigDecimal total_amount;
+        public Integer guest_count;
     }
 
     public static class BookingRequest {
@@ -91,6 +92,7 @@ public class Dto {
         public String check_in_date;
         public String check_out_date;
         public BigDecimal total_amount;
+        public Integer guest_count;
     }
 
     public static class StatusRequest {

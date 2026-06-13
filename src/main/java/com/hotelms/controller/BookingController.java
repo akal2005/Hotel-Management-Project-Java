@@ -99,6 +99,7 @@ public class BookingController {
         booking.setCheckOutDate(checkOut);
         booking.setStatus("confirmed");
         booking.setTotalAmount(request.total_amount);
+        booking.setGuestCount(request.guest_count != null ? request.guest_count : 1);
         booking.setBookingRef("BK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
 
         bookingRepository.save(booking);

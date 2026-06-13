@@ -18,6 +18,16 @@ const ReceptionistDashboard = () => {
   const [availableRooms, setAvailableRooms] = useState([]);
   const [selectedHotelId, setSelectedHotelId] = useState('');
   const [hotels, setHotels] = useState([]);
+  
+  // Dynamic location selector states
+  const [countries, setCountries] = useState([]);
+  const [statesList, setStatesList] = useState([]);
+  const [citiesList, setCitiesList] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [selectedState, setSelectedState] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
+  const [filteredHotels, setFilteredHotels] = useState([]);
+  const [guestCount, setGuestCount] = useState(1);
 
   // Billing and Invoice print state
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
@@ -58,6 +68,57 @@ const ReceptionistDashboard = () => {
     fetchHotels();
   }, [loadBookings]);
 
+  // Compute unique countries
+  useEffect(() => {
+    if (hotels.length > 0) {
+      const uniqueCountries = [...new Set(hotels.map(h => h.country))];
+      setCountries(uniqueCountries);
+      setSelectedCountry(uniqueCountries[0] || '');
+    }
+  }, [hotels]);
+
+  // Compute unique states when selected country changes
+  useEffect(() => {
+    if (selectedCountry) {
+      const match = hotels.filter(h => h.country === selectedCountry);
+      const uniqueStates = [...new Set(match.map(h => h.state))];
+      setStatesList(uniqueStates);
+      setSelectedState(uniqueStates[0] || '');
+    } else {
+      setStatesList([]);
+      setSelectedState('');
+    }
+  }, [selectedCountry, hotels]);
+
+  // Compute unique cities when selected state changes
+  useEffect(() => {
+    if (selectedCountry && selectedState) {
+      const match = hotels.filter(h => h.country === selectedCountry && h.state === selectedState);
+      const uniqueCities = [...new Set(match.map(h => h.city))];
+      setCitiesList(uniqueCities);
+      setSelectedCity(uniqueCities[0] || '');
+    } else {
+      setCitiesList([]);
+      setSelectedCity('');
+    }
+  }, [selectedState, selectedCountry, hotels]);
+
+  // Compute hotels when selected city changes
+  useEffect(() => {
+    if (selectedCountry && selectedState && selectedCity) {
+      const match = hotels.filter(h => h.country === selectedCountry && h.state === selectedState && h.city === selectedCity);
+      setFilteredHotels(match);
+      if (match.length > 0) {
+        setSelectedHotelId(match[0].id);
+      } else {
+        setSelectedHotelId('');
+      }
+    } else {
+      setFilteredHotels([]);
+      setSelectedHotelId('');
+    }
+  }, [selectedCity, selectedState, selectedCountry, hotels]);
+
   // Check availability for walk-in
   const checkWalkinAvailability = async () => {
     if (!selectedHotelId || !checkInDate || !checkOutDate) {
@@ -94,6 +155,7 @@ const ReceptionistDashboard = () => {
         check_in_date: checkInDate,
         check_out_date: checkOutDate,
         total_amount: amount,
+        guest_count: guestCount,
       });
 
       if (res.data.success) {
@@ -102,6 +164,7 @@ const ReceptionistDashboard = () => {
         setWalkinFirstName('');
         setWalkinLastName('');
         setWalkinPhone('');
+        setGuestCount(1);
         setAvailableRooms([]);
         loadBookings();
         setActiveTab('list');
@@ -253,9 +316,33 @@ const ReceptionistDashboard = () => {
             <h4 style={{ color: 'var(--accent)', marginBottom: '16px' }}>1. Select Hotel & Dates</h4>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
               <div className="form-group">
+                <label className="form-label">Country</label>
+                <select className="form-control" value={selectedCountry} onChange={(e) => setSelectedCountry(e.target.value)}>
+                  {countries.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">State</label>
+                <select className="form-control" value={selectedState} onChange={(e) => setSelectedState(e.target.value)}>
+                  {statesList.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">City/District</label>
+                <select className="form-control" value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)}>
+                  {citiesList.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
                 <label className="form-label">Hotel</label>
                 <select className="form-control" value={selectedHotelId} onChange={(e) => setSelectedHotelId(e.target.value)}>
-                  {hotels.map((h) => (
+                  {filteredHotels.map((h) => (
                     <option key={h.id} value={h.id}>{h.name}</option>
                   ))}
                 </select>
@@ -292,6 +379,10 @@ const ReceptionistDashboard = () => {
                   <div className="form-group">
                     <label className="form-label">Customer Email</label>
                     <input type="email" className="form-control" placeholder="guest@example.com" value={walkinEmail} onChange={(e) => setWalkinEmail(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Members Count</label>
+                    <input type="number" className="form-control" min="1" max="10" value={guestCount} onChange={(e) => setGuestCount(parseInt(e.target.value))} required />
                   </div>
                 </div>
 

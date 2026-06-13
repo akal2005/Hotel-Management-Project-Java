@@ -99,6 +99,7 @@ public class ReceptionistController {
         booking.setCheckOutDate(LocalDate.parse(request.check_out_date));
         booking.setStatus("checked_in"); // Walk-in is immediately checked in
         booking.setTotalAmount(request.total_amount);
+        booking.setGuestCount(request.guest_count != null ? request.guest_count : 1);
         booking.setBookingRef("WK-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
 
         bookingRepository.save(booking);

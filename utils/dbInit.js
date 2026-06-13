@@ -3,7 +3,12 @@ const path = require('path');
 const mysql = require('mysql2/promise');
 require('dotenv').config();
 
-const logger = require('./logger');
+const logger = {
+  info: console.log,
+  warn: console.warn,
+  error: console.error,
+  debug: console.log
+};
 
 const initDatabase = async () => {
   const connectionConfig = {

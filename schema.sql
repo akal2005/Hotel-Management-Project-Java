@@ -65,6 +65,7 @@ CREATE TABLE IF NOT EXISTS hotels (
   name VARCHAR(150) NOT NULL,
   address VARCHAR(255) NOT NULL,
   city VARCHAR(100) NOT NULL,
+  state VARCHAR(100) NOT NULL,
   country VARCHAR(100) NOT NULL,
   phone VARCHAR(20) DEFAULT NULL,
   email VARCHAR(150) DEFAULT NULL,
@@ -124,6 +125,7 @@ CREATE TABLE IF NOT EXISTS bookings (
   check_out_date DATE NOT NULL,
   status VARCHAR(50) NOT NULL DEFAULT 'pending' COMMENT 'pending, confirmed, checked_in, checked_out, cancelled',
   total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+  guest_count INT NOT NULL DEFAULT 1,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT,
@@ -228,8 +230,11 @@ INSERT INTO customers (id, user_id, date_of_birth, nationality, id_type, id_numb
 (1, 4, '1990-05-15', 'Indian', 'Aadhar', '1234-5678-9012', '123 Park Avenue', 'Mumbai', 'India', 'Deluxe', 'Non-smoking, high floor');
 
 -- Seed Hotels
-INSERT INTO hotels (id, name, address, city, country, phone, email, description) VALUES
-(1, 'Grand Palace Resort', '1 Beach Road, Colaba', 'Mumbai', 'India', '+91 22 2200 1122', 'grandpalace@hotelms.com', 'A luxurious 5-star ocean-facing heritage hotel in South Mumbai.');
+INSERT INTO hotels (id, name, address, city, state, country, phone, email, description) VALUES
+(1, 'Grand Palace Resort', '1 Beach Road, Colaba', 'Mumbai', 'Maharashtra', 'India', '+91 22 2200 1122', 'grandpalace@hotelms.com', 'A luxurious 5-star ocean-facing heritage hotel in South Mumbai.'),
+(2, 'Leela Palace Chennai', 'Adyar Sea Face', 'Chennai', 'Tamil Nadu', 'India', '+91 44 3366 1234', 'leelapalace@hotelms.com', 'A sea-facing luxury palace hotel in Chennai.'),
+(3, 'Beverly Hills Suites', '90210 Wilshire Blvd', 'Los Angeles', 'California', 'USA', '+1 310 555 0100', 'beverlyhills@hotelms.com', 'Ultra-luxury suite hotel in Beverly Hills.'),
+(4, 'Manhattan Grand Hotel', '100 Broadway Ave', 'New York City', 'New York', 'USA', '+1 212 555 0199', 'manhattan@hotelms.com', 'Premier business and luxury hotel in Manhattan.');
 
 -- Seed Hotel Staff assignments
 INSERT INTO hotel_staff (user_id, hotel_id, is_primary) VALUES
@@ -241,7 +246,16 @@ INSERT INTO hotel_staff (user_id, hotel_id, is_primary) VALUES
 INSERT INTO room_categories (id, hotel_id, name, description, max_occupancy, base_price) VALUES
 (1, 1, 'Standard Room', 'Cozy rooms with modern amenities, king-size bed, and city view.', 2, 2500.00),
 (2, 1, 'Deluxe Room', 'Spacious rooms with private balcony, ocean view, and luxury bathtub.', 2, 4500.00),
-(3, 1, 'Executive Suite', 'Premium suite with separate living room, workspace, and complimentary lounge access.', 4, 9500.00);
+(3, 1, 'Executive Suite', 'Premium suite with separate living room, workspace, and complimentary lounge access.', 4, 9500.00),
+(4, 2, 'Standard Room', 'Comfortable rooms with city views.', 2, 2200.00),
+(5, 2, 'Deluxe Room', 'Spacious rooms with ocean view.', 2, 4200.00),
+(6, 2, 'Executive Suite', 'Premium suite with ocean views.', 4, 8500.00),
+(7, 3, 'Standard Room', 'Modern standard rooms.', 2, 150.00),
+(8, 3, 'Deluxe Room', 'Luxury rooms with Beverly Hills views.', 2, 250.00),
+(9, 3, 'Executive Suite', 'Grand suite with private spa access.', 4, 550.00),
+(10, 4, 'Standard Room', 'Comfortable business rooms.', 2, 180.00),
+(11, 4, 'Deluxe Room', 'Luxury rooms with skyline view.', 2, 280.00),
+(12, 4, 'Executive Suite', 'Spacious luxury penthouse suite.', 4, 600.00);
 
 -- Seed Rooms
 INSERT INTO rooms (id, hotel_id, category_id, room_number, status) VALUES
@@ -249,11 +263,26 @@ INSERT INTO rooms (id, hotel_id, category_id, room_number, status) VALUES
 (2, 1, 1, '102', 'available'),
 (3, 1, 2, '201', 'available'),
 (4, 1, 2, '202', 'available'),
-(5, 1, 3, '301', 'available');
+(5, 1, 3, '301', 'available'),
+(6, 2, 4, '101', 'available'),
+(7, 2, 4, '102', 'available'),
+(8, 2, 5, '201', 'available'),
+(9, 2, 5, '202', 'available'),
+(10, 2, 6, '301', 'available'),
+(11, 3, 7, '101', 'available'),
+(12, 3, 7, '102', 'available'),
+(13, 3, 8, '201', 'available'),
+(14, 3, 8, '202', 'available'),
+(15, 3, 9, '301', 'available'),
+(16, 4, 10, '101', 'available'),
+(17, 4, 10, '102', 'available'),
+(18, 4, 11, '201', 'available'),
+(19, 4, 11, '202', 'available'),
+(20, 4, 12, '301', 'available');
 
 -- Seed Bookings
-INSERT INTO bookings (id, customer_id, hotel_id, room_id, booking_ref, check_in_date, check_out_date, status, total_amount) VALUES
-(1, 1, 1, 3, 'BK-100203-GP', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), 'confirmed', 9000.00);
+INSERT INTO bookings (id, customer_id, hotel_id, room_id, booking_ref, check_in_date, check_out_date, status, total_amount, guest_count) VALUES
+(1, 1, 1, 3, 'BK-100203-GP', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), 'confirmed', 9000.00, 2);
 
 -- Seed Payments
 INSERT INTO payments (id, booking_id, amount, payment_method, status, transaction_ref) VALUES
