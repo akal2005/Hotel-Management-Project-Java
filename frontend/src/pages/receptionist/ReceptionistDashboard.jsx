@@ -131,7 +131,7 @@ const ReceptionistDashboard = () => {
         if (res.data.data.length > 0) setSelectedRoomId(res.data.data[0].id);
       }
     } catch (err) {
-      toast.error('Error checking room availability');
+      toast.error(err.response?.data?.message || 'Error checking room availability');
     }
   };
 
