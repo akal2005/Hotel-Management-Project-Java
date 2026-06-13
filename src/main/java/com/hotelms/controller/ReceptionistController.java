@@ -42,15 +42,15 @@ public class ReceptionistController {
 
         for (Booking b : bookings) {
             Map<String, Object> map = new HashMap<>();
-            map.add("id", b.getId());
-            map.add("booking_ref", b.getBookingRef());
-            map.add("first_name", b.getCustomer().getUser().getFirstName());
-            map.add("last_name", b.getCustomer().getUser().getLastName());
-            map.add("room_number", b.getRoom() != null ? b.getRoom().getRoomNumber() : null);
-            map.add("check_in_date", b.getCheckInDate());
-            map.add("check_out_date", b.getCheckOutDate());
-            map.add("total_amount", b.getTotalAmount());
-            map.add("status", b.getStatus());
+            map.put("id", b.getId());
+            map.put("booking_ref", b.getBookingRef());
+            map.put("first_name", b.getCustomer().getUser().getFirstName());
+            map.put("last_name", b.getCustomer().getUser().getLastName());
+            map.put("room_number", b.getRoom() != null ? b.getRoom().getRoomNumber() : null);
+            map.put("check_in_date", b.getCheckInDate());
+            map.put("check_out_date", b.getCheckOutDate());
+            map.put("total_amount", b.getTotalAmount());
+            map.put("status", b.getStatus());
             responseData.add(map);
         }
 
@@ -161,12 +161,12 @@ public class ReceptionistController {
 
         for (Room r : rooms) {
             Map<String, Object> map = new HashMap<>();
-            map.add("id", r.getId());
-            map.add("room_number", r.getRoomNumber());
-            map.add("category_name", r.getCategory().getName());
-            map.add("max_occupancy", r.getCategory().getMaxOccupancy());
-            map.add("base_price", r.getCategory().getBasePrice());
-            map.add("status", r.getStatus());
+            map.put("id", r.getId());
+            map.put("room_number", r.getRoomNumber());
+            map.put("category_name", r.getCategory().getName());
+            map.put("max_occupancy", r.getCategory().getMaxOccupancy());
+            map.put("base_price", r.getCategory().getBasePrice());
+            map.put("status", r.getStatus());
             responseData.add(map);
         }
 

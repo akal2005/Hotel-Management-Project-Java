@@ -39,13 +39,13 @@ public class AdminController {
 
         for (User u : list) {
             Map<String, Object> map = new HashMap<>();
-            map.add("id", u.getId());
-            map.add("first_name", u.getFirstName());
-            map.add("last_name", u.getLastName());
-            map.add("email", u.getEmail());
-            map.add("phone", u.getPhone());
-            map.add("role_name", u.getRole().getName());
-            map.add("is_active", u.getIsActive());
+            map.put("id", u.getId());
+            map.put("first_name", u.getFirstName());
+            map.put("last_name", u.getLastName());
+            map.put("email", u.getEmail());
+            map.put("phone", u.getPhone());
+            map.put("role_name", u.getRole().getName());
+            map.put("is_active", u.getIsActive());
             responseData.add(map);
         }
 
@@ -110,12 +110,12 @@ public class AdminController {
 
         for (ActivityLog log : list) {
             Map<String, Object> map = new HashMap<>();
-            map.add("id", log.getId());
-            map.add("created_at", log.getCreatedAt());
-            map.add("action", log.getAction());
-            map.add("entity_type", log.getEntityType());
-            map.add("entity_id", log.getEntityId());
-            map.add("ip_address", log.getIpAddress() != null ? log.getIpAddress() : "127.0.0.1");
+            map.put("id", log.getId());
+            map.put("created_at", log.getCreatedAt());
+            map.put("action", log.getAction());
+            map.put("entity_type", log.getEntityType());
+            map.put("entity_id", log.getEntityId());
+            map.put("ip_address", log.getIpAddress() != null ? log.getIpAddress() : "127.0.0.1");
             responseData.add(map);
         }
 

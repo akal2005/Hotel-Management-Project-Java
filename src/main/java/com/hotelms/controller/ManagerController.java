@@ -69,16 +69,16 @@ public class ManagerController {
 
         for (Complaint c : list) {
             Map<String, Object> map = new HashMap<>();
-            map.add("id", c.getId());
-            map.add("complaint_ref", c.getComplaintRef());
-            map.add("customer_first_name", c.getCustomer().getUser().getFirstName());
-            map.add("customer_last_name", c.getCustomer().getUser().getLastName());
-            map.add("subject", c.getSubject());
-            map.add("description", c.getDescription());
-            map.add("status", c.getStatus());
-            map.add("assigned_staff_name", c.getAssignee() != null ? 
+            map.put("id", c.getId());
+            map.put("complaint_ref", c.getComplaintRef());
+            map.put("customer_first_name", c.getCustomer().getUser().getFirstName());
+            map.put("customer_last_name", c.getCustomer().getUser().getLastName());
+            map.put("subject", c.getSubject());
+            map.put("description", c.getDescription());
+            map.put("status", c.getStatus());
+            map.put("assigned_staff_name", c.getAssignee() != null ? 
                     c.getAssignee().getFirstName() + " " + c.getAssignee().getLastName() : null);
-            map.add("resolution", c.getResolution());
+            map.put("resolution", c.getResolution());
             responseData.add(map);
         }
 
@@ -94,13 +94,13 @@ public class ManagerController {
 
         for (Complaint c : list) {
             Map<String, Object> map = new HashMap<>();
-            map.add("id", c.getId());
-            map.add("complaint_ref", c.getComplaintRef());
-            map.add("subject", c.getSubject());
-            map.add("status", c.getStatus());
-            map.add("assigned_staff_name", c.getAssignee() != null ? 
+            map.put("id", c.getId());
+            map.put("complaint_ref", c.getComplaintRef());
+            map.put("subject", c.getSubject());
+            map.put("status", c.getStatus());
+            map.put("assigned_staff_name", c.getAssignee() != null ? 
                     c.getAssignee().getFirstName() + " " + c.getAssignee().getLastName() : null);
-            map.add("resolution", c.getResolution());
+            map.put("resolution", c.getResolution());
             responseData.add(map);
         }
 
