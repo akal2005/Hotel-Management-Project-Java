@@ -272,6 +272,7 @@ public class ManagerController {
             map.put("comment", r.getComment());
             map.put("customer_name", r.getCustomer() != null ? r.getCustomer().getUser().getFirstName() + " " + r.getCustomer().getUser().getLastName() : "Anonymous");
             map.put("hotel_name", r.getHotel() != null ? r.getHotel().getName() : "N/A");
+            map.put("hotel_id", r.getHotel() != null ? r.getHotel().getId() : null);
             map.put("created_at", r.getCreatedAt());
             responseData.add(map);
         }

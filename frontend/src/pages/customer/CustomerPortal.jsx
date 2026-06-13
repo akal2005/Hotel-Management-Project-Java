@@ -11,6 +11,7 @@ const CustomerPortal = () => {
   const [availableRooms, setAvailableRooms] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [complaints, setComplaints] = useState([]);
+  const [reviewsList, setReviewsList] = useState([]);
 
   // Dynamic location selector states
   const [countries, setCountries] = useState([]);
@@ -136,6 +137,17 @@ const CustomerPortal = () => {
     }
   }, []);
 
+  const loadReviews = useCallback(async () => {
+    try {
+      const res = await api.get('/hotels/reviews');
+      if (res.data.success) {
+        setReviewsList(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching reviews', err);
+    }
+  }, []);
+
   const loadProfile = useCallback(async () => {
     try {
       const res = await api.get('/customer/profile');
@@ -160,14 +172,16 @@ const CustomerPortal = () => {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'bookings') {
+    if (activeTab === 'book') {
+      loadReviews();
+    } else if (activeTab === 'bookings') {
       loadBookings();
     } else if (activeTab === 'complaints') {
       loadComplaints();
     } else if (activeTab === 'profile') {
       loadProfile();
     }
-  }, [activeTab, loadBookings, loadComplaints, loadProfile]);
+  }, [activeTab, loadBookings, loadComplaints, loadProfile, loadReviews]);
 
   // Search available rooms
   const handleSearch = async (e) => {
@@ -359,6 +373,30 @@ const CustomerPortal = () => {
                 <div>📍 <strong>Address:</strong> {selectedHotelObj.address}, {selectedHotelObj.city}, {selectedHotelObj.state}, {selectedHotelObj.country}</div>
                 <div>📞 <strong>Phone:</strong> {selectedHotelObj.phone || 'N/A'}</div>
                 <div>✉️ <strong>Email:</strong> {selectedHotelObj.email || 'N/A'}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Hotel Customer Reviews Section */}
+          {selectedHotelObj && (
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <h4 style={{ margin: 0, color: 'var(--accent)', fontSize: '16px' }}>Guest Reviews & Ratings</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '8px' }}>
+                {reviewsList.filter(r => r.hotel_id === selectedHotelObj.id).length === 0 ? (
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '13px', margin: 0 }}>No guest reviews submitted for this branch yet.</p>
+                ) : (
+                  reviewsList.filter(r => r.hotel_id === selectedHotelObj.id).map((r) => (
+                    <div key={r.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '13px' }}>
+                        <strong>{r.customer_name}</strong>
+                        <span style={{ color: 'var(--accent)' }}>{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
+                      </div>
+                      <p style={{ margin: 0, fontSize: '13px', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
+                        "{r.comment}"
+                      </p>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

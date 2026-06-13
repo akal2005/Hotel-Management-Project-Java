@@ -362,7 +362,7 @@ const ManagerDashboard = () => {
                     categories.map((c) => (
                       <tr key={c.id}>
                         <td style={{ fontWeight: '600' }}>{c.name}</td>
-                        <td>{hotels.find(h => h.id === c.hotel_id)?.name || 'Linked Hotel'}</td>
+                        <td>{c.hotel?.name || hotels.find(h => h.id === (c.hotel?.id || c.hotel_id))?.name || 'Linked Hotel'}</td>
                         <td>{c.max_occupancy} guests</td>
                         <td>${c.base_price}</td>
                         <td style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '300px' }}>{c.description}</td>
@@ -400,7 +400,7 @@ const ManagerDashboard = () => {
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Room Category</label>
                 <select className="form-control" value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} required>
-                  {categories.filter(c => c.hotel_id === parseInt(selectedHotelId)).map((cat) => (
+                  {categories.filter(c => (c.hotel?.id || c.hotel_id) === parseInt(selectedHotelId)).map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name} (${cat.base_price}/night)
                     </option>

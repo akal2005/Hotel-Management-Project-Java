@@ -168,6 +168,7 @@ public class ReceptionistController {
             map.put("max_occupancy", r.getCategory().getMaxOccupancy());
             map.put("base_price", r.getCategory().getBasePrice());
             map.put("status", r.getStatus());
+            map.put("hotel_id", r.getHotel() != null ? r.getHotel().getId() : null);
             responseData.add(map);
         }
 
