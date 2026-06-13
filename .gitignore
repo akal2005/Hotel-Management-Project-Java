@@ -1,4 +1,4 @@
-# Dependency directories
+# Node.js and Frontend dependencies
 node_modules/
 frontend/node_modules/
 
@@ -17,11 +17,31 @@ logs/
 uploads/
 frontend/dist/
 
+# Java and Maven build artifacts
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+build/
+!**/src/main/**/build/
+!**/src/test/build/
+
 # Editor files
 .vscode/
 .idea/
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
+*.iws
+*.iml
+*.ipr
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
