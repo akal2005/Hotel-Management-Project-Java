@@ -29,7 +29,8 @@
 }
 
 body {
-  background-color: var(--bg-primary);
+  background: linear-gradient(rgba(11, 15, 25, 0.9), rgba(11, 15, 25, 0.94)), url('/hotel_background.png') no-repeat center center fixed;
+  background-size: cover;
   color: var(--text-primary);
   font-family: var(--font-body);
   line-height: 1.6;
