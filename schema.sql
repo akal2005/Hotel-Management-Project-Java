@@ -381,12 +381,25 @@ INSERT INTO rooms (id, hotel_id, category_id, room_number, status) VALUES
 
 -- Seed Bookings
 INSERT INTO bookings (id, customer_id, hotel_id, room_id, booking_ref, check_in_date, check_out_date, status, total_amount, guest_count) VALUES
-(1, 1, 1, 3, 'BK-100203-GP', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), 'confirmed', 9000.00, 2);
+(1, 1, 1, 3, 'BK-100203-GP', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 2 DAY), 'confirmed', 9000.00, 2),
+(2, 1, 2, 8, 'BK-992015-LE', '2026-05-10', '2026-05-12', 'checked_out', 8400.00, 2),
+(3, 1, 3, 13, 'BK-889104-BH', '2026-05-15', '2026-05-18', 'checked_out', 750.00, 1),
+(4, 1, 4, 18, 'BK-772901-MN', '2026-06-01', '2026-06-04', 'checked_out', 840.00, 2);
 
 -- Seed Payments
 INSERT INTO payments (id, booking_id, amount, payment_method, status, transaction_ref) VALUES
-(1, 1, 9000.00, 'UPI', 'completed', 'txn_gp_9204859012');
+(1, 1, 9000.00, 'UPI', 'completed', 'txn_gp_9204859012'),
+(2, 2, 8400.00, 'Card', 'completed', 'txn_le_9920150912'),
+(3, 3, 750.00, 'NetBanking', 'completed', 'txn_bh_8891040811'),
+(4, 4, 840.00, 'Cash', 'completed', 'txn_mn_7729010199');
 
 -- Seed Complaints
 INSERT INTO complaints (id, customer_id, hotel_id, complaint_ref, subject, description, status, assigned_to) VALUES
 (1, 1, 1, 'CMP-9201-GP', 'AC Remote not working', 'The AC remote in room 201 has dead batteries and does not turn the unit on.', 'open', 5);
+
+-- Seed Reviews
+INSERT INTO reviews (id, customer_id, hotel_id, booking_id, rating, comment) VALUES
+(1, 1, 1, 1, 5, 'Excellent ocean heritage views and impeccable service!'),
+(2, 1, 2, 2, 4, 'Spacious room and beautiful sea-facing location in Adyar.'),
+(3, 1, 3, 3, 5, 'Outstanding service, highly recommended suite in Beverly Hills!'),
+(4, 1, 4, 4, 4, 'Great business hotel in Manhattan with a stunning skyline view.');
