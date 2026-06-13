@@ -234,7 +234,18 @@ INSERT INTO hotels (id, name, address, city, state, country, phone, email, descr
 (1, 'Grand Palace Resort', '1 Beach Road, Colaba', 'Mumbai', 'Maharashtra', 'India', '+91 22 2200 1122', 'grandpalace@hotelms.com', 'A luxurious 5-star ocean-facing heritage hotel in South Mumbai.'),
 (2, 'Leela Palace Chennai', 'Adyar Sea Face', 'Chennai', 'Tamil Nadu', 'India', '+91 44 3366 1234', 'leelapalace@hotelms.com', 'A sea-facing luxury palace hotel in Chennai.'),
 (3, 'Beverly Hills Suites', '90210 Wilshire Blvd', 'Los Angeles', 'California', 'USA', '+1 310 555 0100', 'beverlyhills@hotelms.com', 'Ultra-luxury suite hotel in Beverly Hills.'),
-(4, 'Manhattan Grand Hotel', '100 Broadway Ave', 'New York City', 'New York', 'USA', '+1 212 555 0199', 'manhattan@hotelms.com', 'Premier business and luxury hotel in Manhattan.');
+(4, 'Manhattan Grand Hotel', '100 Broadway Ave', 'New York City', 'New York', 'USA', '+1 212 555 0199', 'manhattan@hotelms.com', 'Premier business and luxury hotel in Manhattan.'),
+(5, 'Silicon Valley Inn', '100 Outer Ring Road', 'Bangalore', 'Karnataka', 'India', '+91 80 4400 9988', 'siliconvalley@hotelms.com', 'Modern business hotel in Bangalore tech hub.'),
+(6, 'Sunset Boulevard Lodge', '8200 Sunset Blvd', 'Los Angeles', 'California', 'USA', '+1 323 555 0244', 'sunsetlodge@hotelms.com', 'Classic Hollywood lodge on Sunset Boulevard.'),
+(7, 'Golden Gate Inn', '200 Lombard St', 'San Francisco', 'California', 'USA', '+1 415 555 0188', 'goldengate@hotelms.com', 'Cozy boutique hotel near the Lombard crooked street.'),
+(8, 'Times Square Plaza', '1500 Broadway', 'New York City', 'New York', 'USA', '+1 212 555 0288', 'timessquare@hotelms.com', 'Vibrant hotel in the heart of Times Square.'),
+(9, 'Ocean Drive Resort', '720 Ocean Drive', 'Miami', 'Florida', 'USA', '+1 305 555 0133', 'oceandrive@hotelms.com', 'Trendy art deco resort on South Beach.'),
+(10, 'Westminster Grand', '10 Parliament St', 'London', 'England', 'UK', '+44 20 7946 0192', 'westminster@hotelms.com', 'Stately historic hotel near Westminster Abbey.'),
+(11, 'CN Tower View Hotel', '300 Front St W', 'Toronto', 'Ontario', 'Canada', '+1 416 555 0147', 'cntowerview@hotelms.com', 'Sleek modern high-rise with CN Tower views.'),
+(12, 'Sydney Opera View', '2 Macquarie St', 'Sydney', 'New South Wales', 'Australia', '+61 2 9251 1111', 'operaview@hotelms.com', 'Breathtaking hotel overlooking Sydney Harbour and Opera House.'),
+(13, 'Shibuya Sky Hotel', '2-24 Shibuya', 'Tokyo', 'Tokyo', 'Japan', '+81 3 5555 0166', 'shibuyasky@hotelms.com', 'High-tech hotel right next to Shibuya Crossing.'),
+(14, 'Shinjuku Central Suite', '1-3 Nishishinjuku', 'Tokyo', 'Tokyo', 'Japan', '+81 3 5555 0199', 'shinjukucentral@hotelms.com', 'Luxury skyscraper suites in the business district.'),
+(15, 'Edinburgh Castle Lodge', '352 Castlehill', 'Edinburgh', 'Scotland', 'UK', '+44 131 496 0122', 'castlelodge@hotelms.com', 'Heritage hotel situated on the Royal Mile.');
 
 -- Seed Hotel Staff assignments
 INSERT INTO hotel_staff (user_id, hotel_id, is_primary) VALUES
@@ -255,7 +266,40 @@ INSERT INTO room_categories (id, hotel_id, name, description, max_occupancy, bas
 (9, 3, 'Executive Suite', 'Grand suite with private spa access.', 4, 550.00),
 (10, 4, 'Standard Room', 'Comfortable business rooms.', 2, 180.00),
 (11, 4, 'Deluxe Room', 'Luxury rooms with skyline view.', 2, 280.00),
-(12, 4, 'Executive Suite', 'Spacious luxury penthouse suite.', 4, 600.00);
+(12, 4, 'Executive Suite', 'Spacious luxury penthouse suite.', 4, 600.00),
+-- Hotel 5: Bangalore
+(13, 5, 'Standard Room', 'Cozy business standard room.', 2, 2000.00),
+(14, 5, 'Deluxe Room', 'Spacious deluxe room with high-speed wifi.', 2, 3500.00),
+-- Hotel 6: LA Sunset
+(15, 6, 'Standard Room', 'Comfortable standard room near sunset strip.', 2, 130.00),
+(16, 6, 'Deluxe Room', 'Chic deluxe room with balcony views.', 2, 210.00),
+-- Hotel 7: SF Golden Gate
+(17, 7, 'Standard Room', 'Warm classic room with bay window.', 2, 140.00),
+(18, 7, 'Deluxe Room', 'Deluxe room with historic details.', 2, 230.00),
+-- Hotel 8: NYC Times Square
+(19, 8, 'Standard Room', 'Compact city standard room.', 2, 170.00),
+(20, 8, 'Deluxe Room', 'Spacious deluxe room overlooking Broadway.', 2, 270.00),
+-- Hotel 9: Miami Ocean
+(21, 9, 'Standard Room', 'Bright standard room close to beach.', 2, 160.00),
+(22, 9, 'Deluxe Room', 'Spectacular oceanfront deluxe room.', 2, 260.00),
+-- Hotel 10: London Westminster
+(23, 10, 'Standard Room', 'Sophisticated heritage room.', 2, 120.00),
+(24, 10, 'Deluxe Room', 'Elegant deluxe room with courtyard view.', 2, 220.00),
+-- Hotel 11: Toronto CN Tower
+(25, 11, 'Standard Room', 'Modern urban standard room.', 2, 130.00),
+(26, 11, 'Deluxe Room', 'Deluxe room with spectacular skyline views.', 2, 220.00),
+-- Hotel 12: Sydney Opera View
+(27, 12, 'Standard Room', 'Chic room with partial harbour view.', 2, 180.00),
+(28, 12, 'Deluxe Room', 'Premium room with full Opera House panorama.', 2, 320.00),
+-- Hotel 13: Tokyo Shibuya
+(29, 13, 'Standard Room', 'Compact high-tech micro room.', 2, 110.00),
+(30, 13, 'Deluxe Room', 'Spacious deluxe room with Tokyo view.', 2, 190.00),
+-- Hotel 14: Tokyo Shinjuku
+(31, 14, 'Standard Room', 'Modern executive room.', 2, 140.00),
+(32, 14, 'Deluxe Room', 'Luxury suite with floor-to-ceiling windows.', 4, 300.00),
+-- Hotel 15: Edinburgh Castle
+(33, 15, 'Standard Room', 'Quaint classic heritage room.', 2, 110.00),
+(34, 15, 'Deluxe Room', 'Deluxe room looking onto Edinburgh Castle.', 2, 190.00);
 
 -- Seed Rooms
 INSERT INTO rooms (id, hotel_id, category_id, room_number, status) VALUES
@@ -278,7 +322,62 @@ INSERT INTO rooms (id, hotel_id, category_id, room_number, status) VALUES
 (17, 4, 10, '102', 'available'),
 (18, 4, 11, '201', 'available'),
 (19, 4, 11, '202', 'available'),
-(20, 4, 12, '301', 'available');
+(20, 4, 12, '301', 'available'),
+-- Hotel 5
+(21, 5, 13, '101', 'available'),
+(22, 5, 13, '102', 'available'),
+(23, 5, 14, '201', 'available'),
+(24, 5, 14, '202', 'available'),
+-- Hotel 6
+(25, 6, 15, '101', 'available'),
+(26, 6, 15, '102', 'available'),
+(27, 6, 16, '201', 'available'),
+(28, 6, 16, '202', 'available'),
+-- Hotel 7
+(29, 7, 17, '101', 'available'),
+(30, 7, 17, '102', 'available'),
+(31, 7, 18, '201', 'available'),
+(32, 7, 18, '202', 'available'),
+-- Hotel 8
+(33, 8, 19, '101', 'available'),
+(34, 8, 19, '102', 'available'),
+(35, 8, 20, '201', 'available'),
+(36, 8, 20, '202', 'available'),
+-- Hotel 9
+(37, 9, 21, '101', 'available'),
+(38, 9, 21, '102', 'available'),
+(39, 9, 22, '201', 'available'),
+(40, 9, 22, '202', 'available'),
+-- Hotel 10
+(41, 10, 23, '101', 'available'),
+(42, 10, 23, '102', 'available'),
+(43, 10, 24, '201', 'available'),
+(44, 10, 24, '202', 'available'),
+-- Hotel 11
+(45, 11, 25, '101', 'available'),
+(46, 11, 25, '102', 'available'),
+(47, 11, 26, '201', 'available'),
+(48, 11, 26, '202', 'available'),
+-- Hotel 12
+(49, 12, 27, '101', 'available'),
+(50, 12, 27, '102', 'available'),
+(51, 12, 28, '201', 'available'),
+(52, 12, 28, '202', 'available'),
+-- Hotel 13
+(53, 13, 29, '101', 'available'),
+(54, 13, 29, '102', 'available'),
+(55, 13, 30, '201', 'available'),
+(56, 13, 30, '202', 'available'),
+-- Hotel 14
+(57, 14, 31, '101', 'available'),
+(58, 14, 31, '102', 'available'),
+(59, 14, 32, '201', 'available'),
+(60, 14, 32, '202', 'available'),
+-- Hotel 15
+(61, 15, 33, '101', 'available'),
+(62, 15, 33, '102', 'available'),
+(63, 15, 34, '201', 'available'),
+(64, 15, 34, '202', 'available');
 
 -- Seed Bookings
 INSERT INTO bookings (id, customer_id, hotel_id, room_id, booking_ref, check_in_date, check_out_date, status, total_amount, guest_count) VALUES

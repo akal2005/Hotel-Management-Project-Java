@@ -8,6 +8,10 @@ const ManagerDashboard = () => {
   const [complaints, setComplaints] = useState([]);
   const [staff, setStaff] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [hotels, setHotels] = useState([]);
+  const [reviews, setReviews] = useState([]);
+  const [bookings, setBookings] = useState([]);
 
   // Form states for resolutions
   const [activeComplaint, setActiveComplaint] = useState(null);
@@ -15,11 +19,16 @@ const ManagerDashboard = () => {
   const [resolutionText, setResolutionText] = useState('');
 
   // Form states for adding a room
-  const [categories, setCategories] = useState([]);
-  const [hotels, setHotels] = useState([]);
   const [newRoomNumber, setNewRoomNumber] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState('');
   const [selectedHotelId, setSelectedHotelId] = useState('');
+
+  // Form states for adding a room category
+  const [catHotelId, setCatHotelId] = useState('');
+  const [catName, setCatName] = useState('');
+  const [catDesc, setCatDesc] = useState('');
+  const [catMaxOccupancy, setCatMaxOccupancy] = useState(2);
+  const [catBasePrice, setCatBasePrice] = useState('');
 
   const toast = useToast();
 
@@ -47,10 +56,9 @@ const ManagerDashboard = () => {
 
   const loadStaff = useCallback(async () => {
     try {
-      const res = await api.get('/users?role=staff'); // fetch staff to assign complaints
+      const res = await api.get('/users'); // fetch staff list
       if (res.data.success) {
-        // filter manager/receptionist/housekeeper
-        setStaff(res.data.data.filter(u => u.role_name !== 'customer'));
+        setStaff(res.data.data.filter(u => u.role_name !== 'customer' && u.role_name !== 'admin'));
       }
     } catch (err) {
       console.error('Error fetching staff list', err);
@@ -73,7 +81,9 @@ const ManagerDashboard = () => {
       const res = await api.get('/room-categories');
       if (res.data.success) {
         setCategories(res.data.data);
-        if (res.data.data.length > 0) setSelectedCategoryId(res.data.data[0].id);
+        if (res.data.data.length > 0) {
+          setSelectedCategoryId(res.data.data[0].id);
+        }
       }
     } catch (err) {
       console.error('Error loading room categories', err);
@@ -85,22 +95,60 @@ const ManagerDashboard = () => {
       const res = await api.get('/hotels');
       if (res.data.success) {
         setHotels(res.data.data);
-        if (res.data.data.length > 0) setSelectedHotelId(res.data.data[0].id);
+        if (res.data.data.length > 0) {
+          setSelectedHotelId(res.data.data[0].id);
+          setCatHotelId(res.data.data[0].id);
+        }
       }
     } catch (err) {
       console.error('Error loading hotels list', err);
     }
   }, []);
 
-  useEffect(() => {
-    loadAnalytics();
-    loadComplaints();
-    loadStaff();
-    loadRooms();
-    loadCategories();
-    loadHotels();
-  }, [loadAnalytics, loadComplaints, loadStaff, loadRooms, loadCategories, loadHotels]);
+  const loadReviews = useCallback(async () => {
+    try {
+      const res = await api.get('/hotels/reviews');
+      if (res.data.success) {
+        setReviews(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error loading reviews list', err);
+    }
+  }, []);
 
+  const loadBookings = useCallback(async () => {
+    try {
+      const res = await api.get('/bookings');
+      if (res.data.success) {
+        setBookings(res.data.data);
+      }
+    } catch (err) {
+      console.error('Error loading bookings', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'overview') {
+      loadAnalytics();
+      loadBookings();
+    } else if (activeTab === 'categories') {
+      loadCategories();
+      loadHotels();
+    } else if (activeTab === 'rooms') {
+      loadRooms();
+      loadCategories();
+      loadHotels();
+    } else if (activeTab === 'bookings') {
+      loadBookings();
+    } else if (activeTab === 'complaints') {
+      loadComplaints();
+      loadStaff();
+    } else if (activeTab === 'reviews') {
+      loadReviews();
+    }
+  }, [activeTab, loadAnalytics, loadComplaints, loadStaff, loadRooms, loadCategories, loadHotels, loadReviews, loadBookings]);
+
+  // Create room
   const handleCreateRoom = async (e) => {
     e.preventDefault();
     if (!newRoomNumber || !selectedCategoryId || !selectedHotelId) {
@@ -109,8 +157,8 @@ const ManagerDashboard = () => {
     try {
       const res = await api.post('/rooms', {
         room_number: newRoomNumber,
-        category_id: selectedCategoryId,
-        hotel_id: selectedHotelId,
+        category_id: parseInt(selectedCategoryId),
+        hotel_id: parseInt(selectedHotelId),
       });
       if (res.data.success) {
         toast.success(`Room ${newRoomNumber} added successfully!`);
@@ -122,12 +170,39 @@ const ManagerDashboard = () => {
     }
   };
 
+  // Create room category
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    if (!catHotelId || !catName || !catBasePrice) {
+      return toast.error('Please fill in hotel, category name, and price');
+    }
+    try {
+      const res = await api.post('/room-categories', {
+        hotel_id: parseInt(catHotelId),
+        name: catName,
+        description: catDesc,
+        max_occupancy: parseInt(catMaxOccupancy),
+        base_price: parseFloat(catBasePrice)
+      });
+      if (res.data.success) {
+        toast.success(`Category "${catName}" added successfully!`);
+        setCatName('');
+        setCatDesc('');
+        setCatBasePrice('');
+        loadCategories();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to create room category');
+    }
+  };
+
+  // Assign complaint
   const handleAssignComplaint = async (e) => {
     e.preventDefault();
     if (!activeComplaint || !assigneeId) return;
     try {
       const res = await api.post(`/complaints/${activeComplaint.id}/assign`, {
-        assigned_to: assigneeId,
+        assigned_to: parseInt(assigneeId),
       });
       if (res.data.success) {
         toast.success('Complaint ticket assigned successfully');
@@ -140,6 +215,7 @@ const ManagerDashboard = () => {
     }
   };
 
+  // Resolve complaint
   const handleResolveComplaint = async (e) => {
     e.preventDefault();
     if (!activeComplaint || !resolutionText) return;
@@ -161,15 +237,24 @@ const ManagerDashboard = () => {
   return (
     <div>
       {/* Tab bar header */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <button className={`btn ${activeTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('overview')}>
-          Overview
+          Overview Dashboard
+        </button>
+        <button className={`btn ${activeTab === 'categories' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('categories')}>
+          Room Categories
         </button>
         <button className={`btn ${activeTab === 'rooms' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('rooms')}>
           Rooms Status
         </button>
+        <button className={`btn ${activeTab === 'bookings' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('bookings')}>
+          Reservations registry
+        </button>
         <button className={`btn ${activeTab === 'complaints' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('complaints')}>
           Guest Complaints
+        </button>
+        <button className={`btn ${activeTab === 'reviews' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('reviews')}>
+          Customer Reviews
         </button>
       </div>
 
@@ -177,35 +262,116 @@ const ManagerDashboard = () => {
       {activeTab === 'overview' && (
         <div>
           {/* Stat widgets */}
-          <div className="dashboard-grid">
-            <div className="stat-card">
+          <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="stat-details">
-                <h4>Total Revenue</h4>
-                <p>${analytics?.revenueStats?.totalRevenue || 0}</p>
+                <h4 style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>Completed Revenue</h4>
+                <p style={{ margin: '8px 0 0', fontSize: '28px', fontWeight: 'bold' }}>${analytics?.revenueStats?.totalRevenue || 0}</p>
               </div>
-              <div className="stat-icon">💰</div>
+              <div className="stat-icon" style={{ fontSize: '32px' }}>💰</div>
             </div>
-            <div className="stat-card">
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="stat-details">
-                <h4>Occupancy Rate</h4>
-                <p>{analytics?.occupancyStats?.occupancyRate || '0%'}</p>
+                <h4 style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>Room Occupancy Rate</h4>
+                <p style={{ margin: '8px 0 0', fontSize: '28px', fontWeight: 'bold' }}>{analytics?.occupancyStats?.occupancyRate || '0%'}</p>
               </div>
-              <div className="stat-icon">🏨</div>
+              <div className="stat-icon" style={{ fontSize: '32px' }}>🏨</div>
             </div>
-            <div className="stat-card">
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div className="stat-details">
-                <h4>Open Complaints</h4>
-                <p>{complaints.filter((c) => c.status !== 'resolved' && c.status !== 'closed').length}</p>
+                <h4 style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>Open Support Tickets</h4>
+                <p style={{ margin: '8px 0 0', fontSize: '28px', fontWeight: 'bold' }}>{complaints.filter((c) => c.status !== 'resolved' && c.status !== 'closed').length}</p>
               </div>
-              <div className="stat-icon">⚠️</div>
+              <div className="stat-icon" style={{ fontSize: '32px' }}>⚠️</div>
             </div>
           </div>
 
           <div className="card">
-            <h3 className="card-title">Recent Activity Logs</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
-              System statistics, complaints, and occupancy rates are synced automatically.
+            <h3 className="card-title">Live Revenue & Occupancy Analytics</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>
+              Select tabs to manage categories, view specific room statuses, assign/resolve guest complaints, and review customer ratings.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Room Categories */}
+      {activeTab === 'categories' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Create Category form */}
+          <div className="card" style={{ maxWidth: '600px' }}>
+            <h3 className="card-title">Create Room Category</h3>
+            <form onSubmit={handleCreateCategory}>
+              <div className="form-group">
+                <label className="form-label">Hotel Branch</label>
+                <select className="form-control" value={catHotelId} onChange={(e) => setCatHotelId(e.target.value)} required>
+                  <option value="">-- Select Hotel --</option>
+                  {hotels.map((h) => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Category Name</label>
+                <input type="text" className="form-control" placeholder="e.g. Presidential Suite" value={catName} onChange={(e) => setCatName(e.target.value)} required />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Description</label>
+                <textarea className="form-control" rows="2" placeholder="Describe the room size, amenities..." value={catDesc} onChange={(e) => setCatDesc(e.target.value)}></textarea>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <div className="form-group">
+                  <label className="form-label">Max Occupants</label>
+                  <input type="number" className="form-control" min="1" max="10" value={catMaxOccupancy} onChange={(e) => setCatMaxOccupancy(e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Price per Night ($)</label>
+                  <input type="number" className="form-control" min="1" step="0.01" placeholder="250.00" value={catBasePrice} onChange={(e) => setCatBasePrice(e.target.value)} required />
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }}>
+                Create Category
+              </button>
+            </form>
+          </div>
+
+          {/* List Categories */}
+          <div className="card">
+            <h3 className="card-title">Registered Room Categories</h3>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Category Name</th>
+                    <th>Hotel Branch</th>
+                    <th>Max Occupancy</th>
+                    <th>Base Price / Night</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categories.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No room categories defined.</td>
+                    </tr>
+                  ) : (
+                    categories.map((c) => (
+                      <tr key={c.id}>
+                        <td style={{ fontWeight: '600' }}>{c.name}</td>
+                        <td>{hotels.find(h => h.id === c.hotel_id)?.name || 'Linked Hotel'}</td>
+                        <td>{c.max_occupancy} guests</td>
+                        <td>${c.base_price}</td>
+                        <td style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '300px' }}>{c.description}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
@@ -223,7 +389,9 @@ const ManagerDashboard = () => {
               </div>
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Select Hotel</label>
-                <select className="form-control" value={selectedHotelId} onChange={(e) => setSelectedHotelId(e.target.value)} required>
+                <select className="form-control" value={selectedHotelId} onChange={(e) => {
+                  setSelectedHotelId(e.target.value);
+                }} required>
                   {hotels.map((h) => (
                     <option key={h.id} value={h.id}>{h.name}</option>
                   ))}
@@ -232,7 +400,7 @@ const ManagerDashboard = () => {
               <div className="form-group" style={{ marginBottom: 0 }}>
                 <label className="form-label">Room Category</label>
                 <select className="form-control" value={selectedCategoryId} onChange={(e) => setSelectedCategoryId(e.target.value)} required>
-                  {categories.map((cat) => (
+                  {categories.filter(c => c.hotel_id === parseInt(selectedHotelId)).map((cat) => (
                     <option key={cat.id} value={cat.id}>
                       {cat.name} (${cat.base_price}/night)
                     </option>
@@ -251,6 +419,7 @@ const ManagerDashboard = () => {
                 <thead>
                   <tr>
                     <th>Room No</th>
+                    <th>Hotel Branch</th>
                     <th>Category</th>
                     <th>Occupancy</th>
                     <th>Price</th>
@@ -261,6 +430,7 @@ const ManagerDashboard = () => {
                   {rooms.map((room) => (
                     <tr key={room.id}>
                       <td style={{ fontWeight: 'bold' }}>Room {room.room_number}</td>
+                      <td>{hotels.find(h => h.id === room.hotel_id)?.name || 'Linked Hotel'}</td>
                       <td>{room.category_name}</td>
                       <td>{room.max_occupancy} guests</td>
                       <td>${room.base_price}</td>
@@ -276,6 +446,57 @@ const ManagerDashboard = () => {
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Reservations registry */}
+      {activeTab === 'bookings' && (
+        <div className="card">
+          <h3 className="card-title">Guest Reservations Registry</h3>
+          <div className="table-responsive">
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Booking Ref</th>
+                  <th>Guest Name</th>
+                  <th>Hotel Branch</th>
+                  <th>Room</th>
+                  <th>Guest Count</th>
+                  <th>Stay Period</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bookings.length === 0 ? (
+                  <tr>
+                    <td colSpan="8" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No bookings recorded in the system.</td>
+                  </tr>
+                ) : (
+                  bookings.map((b) => (
+                    <tr key={b.id}>
+                      <td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{b.booking_ref}</td>
+                      <td style={{ fontWeight: '600' }}>{b.customer_name}</td>
+                      <td>{b.hotel_name}</td>
+                      <td>Room {b.room_number}</td>
+                      <td>{b.guest_count} guests</td>
+                      <td style={{ fontSize: '13px' }}>
+                        {new Date(b.check_in_date).toLocaleDateString()} to {new Date(b.check_out_date).toLocaleDateString()}
+                      </td>
+                      <td>${b.total_amount}</td>
+                      <td>
+                        <span className={`badge badge-${
+                          b.status === 'confirmed' ? 'success' :
+                          b.status === 'checked_in' ? 'info' :
+                          b.status === 'checked_out' ? 'secondary' : 'warning'
+                        }`}>{b.status}</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -394,6 +615,33 @@ const ManagerDashboard = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Tab: Customer Reviews */}
+      {activeTab === 'reviews' && (
+        <div className="card">
+          <h3 className="card-title">Guest Reviews & Ratings</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px', marginTop: '16px' }}>
+            {reviews.length === 0 ? (
+              <p style={{ color: 'var(--text-secondary)', gridColumn: '1/-1', textAlign: 'center' }}>No guest reviews submitted yet.</p>
+            ) : (
+              reviews.map((r) => (
+                <div key={r.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '15px' }}>{r.customer_name}</div>
+                    <div style={{ color: 'var(--accent)', fontWeight: 'bold' }}>{'⭐'.repeat(r.rating)}</div>
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+                    Stayed at: <strong>{r.hotel_name}</strong>
+                  </div>
+                  <p style={{ margin: 0, fontSize: '14px', fontStyle: 'italic', color: 'var(--text-primary)' }}>
+                    "{r.comment}"
+                  </p>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
     </div>

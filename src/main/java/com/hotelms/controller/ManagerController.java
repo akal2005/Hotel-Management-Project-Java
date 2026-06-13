@@ -39,6 +39,9 @@ public class ManagerController {
     @Autowired
     private RoomCategoryRepository roomCategoryRepository;
 
+    @Autowired
+    private CustomerRepository customerRepository;
+
     // Analytics Dashboard
     @GetMapping("/analytics/overview")
     public ResponseEntity<?> getAnalytics() {
@@ -78,8 +81,8 @@ public class ManagerController {
             Map<String, Object> map = new HashMap<>();
             map.put("id", c.getId());
             map.put("complaint_ref", c.getComplaintRef());
-            map.put("customer_first_name", c.getCustomer().getUser().getFirstName());
-            map.put("customer_last_name", c.getCustomer().getUser().getLastName());
+            map.put("customer_first_name", c.getCustomer() != null ? c.getCustomer().getUser().getFirstName() : "Walk-in");
+            map.put("customer_last_name", c.getCustomer() != null ? c.getCustomer().getUser().getLastName() : "Guest");
             map.put("subject", c.getSubject());
             map.put("description", c.getDescription());
             map.put("status", c.getStatus());
@@ -95,8 +98,10 @@ public class ManagerController {
     // My complaints (for customer portal)
     @GetMapping("/complaints/my-complaints")
     public ResponseEntity<?> listMyComplaints() {
-        // Find guest ID by logged in user (or just list all complaints for testing simplicity)
-        List<Complaint> list = complaintRepository.findAll();
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Customer customer = customerRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Customer profile not found"));
+        List<Complaint> list = complaintRepository.findByCustomerId(customer.getId());
         List<Map<String, Object>> responseData = new ArrayList<>();
 
         for (Complaint c : list) {
@@ -104,7 +109,9 @@ public class ManagerController {
             map.put("id", c.getId());
             map.put("complaint_ref", c.getComplaintRef());
             map.put("subject", c.getSubject());
+            map.put("description", c.getDescription());
             map.put("status", c.getStatus());
+            map.put("hotel_name", c.getHotel() != null ? c.getHotel().getName() : "N/A");
             map.put("assigned_staff_name", c.getAssignee() != null ? 
                     c.getAssignee().getFirstName() + " " + c.getAssignee().getLastName() : null);
             map.put("resolution", c.getResolution());
@@ -116,41 +123,26 @@ public class ManagerController {
 
     @PostMapping("/complaints")
     public ResponseEntity<?> addComplaint(@RequestBody ComplaintRequest request) {
-        // For simple testing, create default mock complaint
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Customer customer = customerRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new RuntimeException("Customer profile not found"));
+        Hotel hotel = hotelRepository.findById(request.hotel_id)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+
         Complaint c = new Complaint();
         c.setComplaintRef("CMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
         c.setSubject(request.subject);
         c.setDescription(request.description);
         c.setStatus("open");
-        
-        // Lookup customer/hotel defaults
-        c.setCustomer(userRepository.findAll().stream()
-                .filter(u -> u.getRole().getName().equals("customer"))
-                .map(u -> u.getId())
-                .findFirst()
-                .flatMap(uid -> Optional.of(new Customer())) // placeholder
-                .orElse(null)); // JPA will save cascade if not null, let's save cleanly:
-        
-        // Actually let's fetch customer properly:
-        List<Customer> customers = userRepository.findAll().stream()
-                .filter(u -> u.getRole().getName().equals("customer"))
-                .map(u -> {
-                    // query database
-                    return null; // fallback
-                }).toList();
-        
-        // Let's query first customer in DB:
-        List<Complaint> dbList = complaintRepository.findAll();
-        if (!dbList.isEmpty()) {
-            c.setCustomer(dbList.get(0).getCustomer());
-            c.setHotel(dbList.get(0).getHotel());
-        }
+        c.setCustomer(customer);
+        c.setHotel(hotel);
 
         complaintRepository.save(c);
         return ResponseEntity.ok(new ApiResponse(true, "Complaint lodged successfully", c));
     }
 
     public static class ComplaintRequest {
+        public int hotel_id;
         public String subject;
         public String description;
     }
@@ -241,6 +233,71 @@ public class ManagerController {
     @GetMapping("/room-categories")
     public ResponseEntity<?> listCategories() {
         return ResponseEntity.ok(new ApiResponse(true, "Room categories loaded", roomCategoryRepository.findAll()));
+    }
+
+    // Create a new room category (Manager/Admin only)
+    @PostMapping("/room-categories")
+    public ResponseEntity<?> createCategory(@RequestBody RoomCategoryCreationRequest request) {
+        Hotel hotel = hotelRepository.findById(request.hotel_id)
+                .orElseThrow(() -> new RuntimeException("Hotel not found"));
+        RoomCategory category = new RoomCategory();
+        category.setHotel(hotel);
+        category.setName(request.name);
+        category.setDescription(request.description);
+        category.setMaxOccupancy(request.max_occupancy);
+        category.setBasePrice(request.base_price);
+
+        RoomCategory saved = roomCategoryRepository.save(category);
+        return ResponseEntity.status(201)
+                .body(new ApiResponse(true, "Room category created successfully", saved));
+    }
+
+    public static class RoomCategoryCreationRequest {
+        public int hotel_id;
+        public String name;
+        public String description;
+        public int max_occupancy;
+        public BigDecimal base_price;
+    }
+
+    // List all reviews (Manager/Admin only)
+    @GetMapping("/hotels/reviews")
+    public ResponseEntity<?> listReviews() {
+        List<Review> list = reviewRepository.findAll();
+        List<Map<String, Object>> responseData = new ArrayList<>();
+        for (Review r : list) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", r.getId());
+            map.put("rating", r.getRating());
+            map.put("comment", r.getComment());
+            map.put("customer_name", r.getCustomer() != null ? r.getCustomer().getUser().getFirstName() + " " + r.getCustomer().getUser().getLastName() : "Anonymous");
+            map.put("hotel_name", r.getHotel() != null ? r.getHotel().getName() : "N/A");
+            map.put("created_at", r.getCreatedAt());
+            responseData.add(map);
+        }
+        return ResponseEntity.ok(new ApiResponse(true, "Reviews loaded", responseData));
+    }
+
+    // List all bookings (Manager/Admin only)
+    @GetMapping("/bookings")
+    public ResponseEntity<?> listAllBookings() {
+        List<Booking> list = bookingRepository.findAll();
+        List<Map<String, Object>> responseData = new ArrayList<>();
+        for (Booking b : list) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", b.getId());
+            map.put("booking_ref", b.getBookingRef());
+            map.put("customer_name", b.getCustomer() != null ? b.getCustomer().getUser().getFirstName() + " " + b.getCustomer().getUser().getLastName() : "Walk-in Guest");
+            map.put("hotel_name", b.getHotel() != null ? b.getHotel().getName() : "N/A");
+            map.put("room_number", b.getRoom() != null ? b.getRoom().getRoomNumber() : "N/A");
+            map.put("check_in_date", b.getCheckInDate());
+            map.put("check_out_date", b.getCheckOutDate());
+            map.put("total_amount", b.getTotalAmount());
+            map.put("status", b.getStatus());
+            map.put("guest_count", b.getGuestCount());
+            responseData.add(map);
+        }
+        return ResponseEntity.ok(new ApiResponse(true, "All bookings loaded", responseData));
     }
 
     // Create a new room (Manager/Admin only)

@@ -4,10 +4,11 @@ import { api } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('users');
+  const [activeTab, setActiveTab] = useState('overview');
   const [users, setUsers] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState(null);
 
   // Form states for creating staff user
   const [newEmail, setNewEmail] = useState('');
@@ -28,8 +29,25 @@ const AdminDashboard = () => {
   const [hotelEmail, setHotelEmail] = useState('');
   const [hotelDesc, setHotelDesc] = useState('');
 
+  // Staff assignment states
+  const [assignments, setAssignments] = useState([]);
+  const [assignStaffId, setAssignStaffId] = useState('');
+  const [assignHotelId, setAssignHotelId] = useState('');
+  const [assignIsPrimary, setAssignIsPrimary] = useState(true);
+
   const location = useLocation();
   const toast = useToast();
+
+  const loadStats = useCallback(async () => {
+    try {
+      const res = await api.get('/users/stats');
+      if (res.data.success) {
+        setStats(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load system stats');
+    }
+  }, []);
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -70,6 +88,17 @@ const AdminDashboard = () => {
     }
   }, [toast]);
 
+  const loadAssignments = useCallback(async () => {
+    try {
+      const res = await api.get('/users/staff/assignments');
+      if (res.data.success) {
+        setAssignments(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to load staff assignments');
+    }
+  }, []);
+
   // Synchronize route paths to activeTab
   useEffect(() => {
     if (location.pathname.endsWith('/logs')) {
@@ -78,20 +107,30 @@ const AdminDashboard = () => {
       setActiveTab('hotels');
     } else if (location.pathname.endsWith('/create')) {
       setActiveTab('create');
-    } else {
+    } else if (location.pathname.endsWith('/assignments')) {
+      setActiveTab('assignments');
+    } else if (location.pathname.endsWith('/users')) {
       setActiveTab('users');
+    } else {
+      setActiveTab('overview');
     }
   }, [location]);
 
   useEffect(() => {
-    if (activeTab === 'users') {
+    if (activeTab === 'overview') {
+      loadStats();
+    } else if (activeTab === 'users') {
       loadUsers();
     } else if (activeTab === 'logs') {
       loadLogs();
     } else if (activeTab === 'hotels') {
       loadHotels();
+    } else if (activeTab === 'assignments') {
+      loadAssignments();
+      loadUsers();
+      loadHotels();
     }
-  }, [activeTab, loadUsers, loadLogs, loadHotels]);
+  }, [activeTab, loadStats, loadUsers, loadLogs, loadHotels, loadAssignments]);
 
   // Create staff user
   const handleCreateStaff = async (e) => {
@@ -135,6 +174,19 @@ const AdminDashboard = () => {
     }
   };
 
+  // Update user role
+  const handleRoleChange = async (userId, newRole) => {
+    try {
+      const res = await api.patch(`/users/${userId}/role`, { role: newRole });
+      if (res.data.success) {
+        toast.success('User role updated successfully!');
+        setUsers(users.map(u => u.id === userId ? { ...u, role_name: newRole } : u));
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update user role');
+    }
+  };
+
   // Create hotel
   const handleCreateHotel = async (e) => {
     e.preventDefault();
@@ -167,10 +219,50 @@ const AdminDashboard = () => {
     }
   };
 
+  // Handle staff assignment to hotel
+  const handleAssignStaff = async (e) => {
+    e.preventDefault();
+    if (!assignStaffId || !assignHotelId) {
+      return toast.error('Please select staff and hotel');
+    }
+    try {
+      const res = await api.post('/users/staff/assign', {
+        user_id: parseInt(assignStaffId),
+        hotel_id: parseInt(assignHotelId),
+        is_primary: assignIsPrimary
+      });
+      if (res.data.success) {
+        toast.success('Staff assigned successfully!');
+        setAssignStaffId('');
+        setAssignHotelId('');
+        loadAssignments();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to assign staff');
+    }
+  };
+
+  // Handle removing staff assignment
+  const handleRemoveAssignment = async (assignmentId) => {
+    if (!window.confirm('Are you sure you want to remove this staff assignment?')) return;
+    try {
+      const res = await api.delete(`/users/staff/assign/${assignmentId}`);
+      if (res.data.success) {
+        toast.success('Assignment removed successfully');
+        loadAssignments();
+      }
+    } catch (err) {
+      toast.error('Failed to remove assignment');
+    }
+  };
+
   return (
     <div>
       {/* Tab bar header */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+        <button className={`btn ${activeTab === 'overview' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('overview')}>
+          Overview Dashboard
+        </button>
         <button className={`btn ${activeTab === 'users' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('users')}>
           User Accounts
         </button>
@@ -180,10 +272,56 @@ const AdminDashboard = () => {
         <button className={`btn ${activeTab === 'hotels' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('hotels')}>
           Hotel Settings
         </button>
+        <button className={`btn ${activeTab === 'assignments' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('assignments')}>
+          Staff Assignments
+        </button>
         <button className={`btn ${activeTab === 'logs' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('logs')}>
           System Audit Logs
         </button>
       </div>
+
+      {/* Tab: Overview */}
+      {activeTab === 'overview' && (
+        <div>
+          <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '24px' }}>
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="stat-details">
+                <h4 style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>Total Hotels</h4>
+                <p style={{ margin: '8px 0 0', fontSize: '28px', fontWeight: 'bold' }}>{stats?.totalHotels || 0}</p>
+              </div>
+              <div className="stat-icon" style={{ fontSize: '32px' }}>🏨</div>
+            </div>
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="stat-details">
+                <h4 style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>Registered Users</h4>
+                <p style={{ margin: '8px 0 0', fontSize: '28px', fontWeight: 'bold' }}>{stats?.totalUsers || 0}</p>
+              </div>
+              <div className="stat-icon" style={{ fontSize: '32px' }}>👥</div>
+            </div>
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="stat-details">
+                <h4 style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>Total Bookings</h4>
+                <p style={{ margin: '8px 0 0', fontSize: '28px', fontWeight: 'bold' }}>{stats?.totalBookings || 0}</p>
+              </div>
+              <div className="stat-icon" style={{ fontSize: '32px' }}>📅</div>
+            </div>
+            <div className="stat-card" style={{ background: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div className="stat-details">
+                <h4 style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '14px' }}>System Revenue</h4>
+                <p style={{ margin: '8px 0 0', fontSize: '28px', fontWeight: 'bold' }}>${stats?.totalRevenue || 0}</p>
+              </div>
+              <div className="stat-icon" style={{ fontSize: '32px' }}>💰</div>
+            </div>
+          </div>
+
+          <div className="card">
+            <h3 className="card-title">System Health & Live Overview</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.6' }}>
+              Welcome to the System Administration Panel. Use the menu tabs above to provision staff members, configure hotel branches worldwide, assign managers and receptionists to specific hotel properties, and review complete system security logs.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Tab: Users accounts list */}
       {activeTab === 'users' && (
@@ -213,12 +351,21 @@ const AdminDashboard = () => {
                       <td>{u.email}</td>
                       <td>{u.phone || 'N/A'}</td>
                       <td>
-                        <span className={`badge badge-${
-                          u.role_name === 'admin' ? 'danger' :
-                          u.role_name === 'manager' ? 'warning' :
-                          u.role_name === 'receptionist' ? 'info' :
-                          u.role_name === 'housekeeper' ? 'primary' : 'secondary'
-                        }`}>{u.role_name}</span>
+                        {u.role_name === 'admin' ? (
+                          <span className="badge badge-danger">admin</span>
+                        ) : (
+                          <select
+                            className="form-control"
+                            value={u.role_name}
+                            onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                            style={{ padding: '4px 8px', fontSize: '13px', width: 'auto', display: 'inline-block' }}
+                          >
+                            <option value="manager">manager</option>
+                            <option value="receptionist">receptionist</option>
+                            <option value="housekeeper">housekeeper</option>
+                            <option value="customer">customer</option>
+                          </select>
+                        )}
                       </td>
                       <td>
                         <span className={`badge badge-${u.is_active ? 'success' : 'danger'}`}>
@@ -376,6 +523,96 @@ const AdminDashboard = () => {
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{hotel.email || 'N/A'}</div>
                         </td>
                         <td style={{ maxWidth: '300px', fontSize: '13px', color: 'var(--text-secondary)' }}>{hotel.description}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab: Staff assignments */}
+      {activeTab === 'assignments' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {/* Assignment form */}
+          <div className="card" style={{ maxWidth: '600px' }}>
+            <h3 className="card-title">Assign Staff to Hotel Branch</h3>
+            <form onSubmit={handleAssignStaff}>
+              <div className="form-group">
+                <label className="form-label">Select Staff Member</label>
+                <select className="form-control" value={assignStaffId} onChange={(e) => setAssignStaffId(e.target.value)} required>
+                  <option value="">-- Choose User --</option>
+                  {users.filter(u => u.role_name !== 'customer' && u.role_name !== 'admin').map((u) => (
+                    <option key={u.id} value={u.id}>{u.first_name} {u.last_name} ({u.role_name})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Select Hotel Branch</label>
+                <select className="form-control" value={assignHotelId} onChange={(e) => setAssignHotelId(e.target.value)} required>
+                  <option value="">-- Choose Hotel Branch --</option>
+                  {hotelsList.map((h) => (
+                    <option key={h.id} value={h.id}>{h.name} - {h.city}, {h.country}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input type="checkbox" id="isPrimary" checked={assignIsPrimary} onChange={(e) => setAssignIsPrimary(e.target.checked)} />
+                <label htmlFor="isPrimary" className="form-label" style={{ marginBottom: 0, cursor: 'pointer' }}>Primary Assignment (Active Branch)</label>
+              </div>
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }}>
+                Link Staff to Branch
+              </button>
+            </form>
+          </div>
+
+          {/* Assignments table */}
+          <div className="card">
+            <h3 className="card-title">Active Staff Assignments</h3>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Staff Name</th>
+                    <th>Email Address</th>
+                    <th>System Role</th>
+                    <th>Assigned Hotel Branch</th>
+                    <th>Is Primary</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignments.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No staff assignments configured.</td>
+                    </tr>
+                  ) : (
+                    assignments.map((as) => (
+                      <tr key={as.id}>
+                        <td style={{ fontWeight: '600' }}>{as.staff_name}</td>
+                        <td>{as.staff_email}</td>
+                        <td>
+                          <span className={`badge badge-${
+                            as.staff_role === 'manager' ? 'warning' :
+                            as.staff_role === 'receptionist' ? 'info' : 'primary'
+                          }`}>{as.staff_role}</span>
+                        </td>
+                        <td>{as.hotel_name}</td>
+                        <td>
+                          <span className={`badge badge-${as.is_primary ? 'success' : 'secondary'}`}>
+                            {as.is_primary ? 'Primary' : 'Secondary'}
+                          </span>
+                        </td>
+                        <td>
+                          <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '12px', backgroundColor: '#dc3545', borderColor: '#dc3545' }} onClick={() => handleRemoveAssignment(as.id)}>
+                            Remove
+                          </button>
+                        </td>
                       </tr>
                     ))
                   )}

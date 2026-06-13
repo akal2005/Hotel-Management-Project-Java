@@ -11,7 +11,6 @@ const CustomerPortal = () => {
   const [availableRooms, setAvailableRooms] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [complaints, setComplaints] = useState([]);
-  const [reviews, setReviews] = useState([]);
 
   // Dynamic location selector states
   const [countries, setCountries] = useState([]);
@@ -28,6 +27,20 @@ const CustomerPortal = () => {
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewComment, setNewReviewComment] = useState('');
   const [reviewBookingId, setReviewBookingId] = useState('');
+
+  // Profile Form States
+  const [profileFirstName, setProfileFirstName] = useState('');
+  const [profileLastName, setProfileLastName] = useState('');
+  const [profilePhone, setProfilePhone] = useState('');
+  const [profileDob, setProfileDob] = useState('');
+  const [profileNationality, setProfileNationality] = useState('');
+  const [profileIdType, setProfileIdType] = useState('Passport');
+  const [profileIdNumber, setProfileIdNumber] = useState('');
+  const [profileAddress, setProfileAddress] = useState('');
+  const [profileCity, setProfileCity] = useState('');
+  const [profileCountry, setProfileCountry] = useState('');
+  const [profilePreferredRoomType, setProfilePreferredRoomType] = useState('Standard');
+  const [profileSpecialRequests, setProfileSpecialRequests] = useState('');
 
   const toast = useToast();
 
@@ -123,13 +136,38 @@ const CustomerPortal = () => {
     }
   }, []);
 
+  const loadProfile = useCallback(async () => {
+    try {
+      const res = await api.get('/customer/profile');
+      if (res.data.success) {
+        const p = res.data.data;
+        setProfileFirstName(p.first_name || '');
+        setProfileLastName(p.last_name || '');
+        setProfilePhone(p.phone || '');
+        setProfileDob(p.date_of_birth || '');
+        setProfileNationality(p.nationality || '');
+        setProfileIdType(p.id_type || 'Passport');
+        setProfileIdNumber(p.id_number || '');
+        setProfileAddress(p.address || '');
+        setProfileCity(p.city || '');
+        setProfileCountry(p.country || '');
+        setProfilePreferredRoomType(p.preferred_room_type || 'Standard');
+        setProfileSpecialRequests(p.special_requests || '');
+      }
+    } catch (err) {
+      console.error('Error fetching profile details', err);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'bookings') {
       loadBookings();
     } else if (activeTab === 'complaints') {
       loadComplaints();
+    } else if (activeTab === 'profile') {
+      loadProfile();
     }
-  }, [activeTab, loadBookings, loadComplaints]);
+  }, [activeTab, loadBookings, loadComplaints, loadProfile]);
 
   // Search available rooms
   const handleSearch = async (e) => {
@@ -154,11 +192,12 @@ const CustomerPortal = () => {
   const handleBookRoom = async (roomId, price) => {
     try {
       const res = await api.post('/bookings', {
-        hotel_id: selectedHotel,
+        hotel_id: parseInt(selectedHotel),
         room_id: roomId,
         check_in_date: checkIn,
         check_out_date: checkOut,
         total_amount: price, // base price per night for testing
+        guest_count: 1, // default guest count
       });
       if (res.data.success) {
         toast.success(`Booking successful! Ref: ${res.data.data.booking_ref}`);
@@ -172,10 +211,12 @@ const CustomerPortal = () => {
   // Submit complaint
   const handleAddComplaint = async (e) => {
     e.preventDefault();
-    if (!newComplaintSubject || !newComplaintDesc) return;
+    if (!selectedHotel || !newComplaintSubject || !newComplaintDesc) {
+      return toast.error('Please specify hotel, subject, and details');
+    }
     try {
       const res = await api.post('/complaints', {
-        hotel_id: selectedHotel,
+        hotel_id: parseInt(selectedHotel),
         subject: newComplaintSubject,
         description: newComplaintDesc,
       });
@@ -204,7 +245,6 @@ const CustomerPortal = () => {
         toast.success('Thank you for your review!');
         setNewReviewComment('');
         setReviewBookingId('');
-        // Reload bookings to reflect review update
         loadBookings();
         setActiveTab('bookings');
       }
@@ -213,10 +253,39 @@ const CustomerPortal = () => {
     }
   };
 
+  // Submit Profile Changes
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await api.put('/customer/profile', {
+        first_name: profileFirstName,
+        last_name: profileLastName,
+        phone: profilePhone,
+        date_of_birth: profileDob,
+        nationality: profileNationality,
+        id_type: profileIdType,
+        id_number: profileIdNumber,
+        address: profileAddress,
+        city: profileCity,
+        country: profileCountry,
+        preferred_room_type: profilePreferredRoomType,
+        special_requests: profileSpecialRequests
+      });
+      if (res.data.success) {
+        toast.success('Your profile has been updated!');
+        loadProfile();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update profile');
+    }
+  };
+
+  const selectedHotelObj = hotels.find((h) => h.id === parseInt(selectedHotel));
+
   return (
     <div>
       {/* Tab bar header */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
         <button className={`btn ${activeTab === 'book' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('book')}>
           Book a Room
         </button>
@@ -226,11 +295,14 @@ const CustomerPortal = () => {
         <button className={`btn ${activeTab === 'complaints' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('complaints')}>
           My Complaints
         </button>
+        <button className={`btn ${activeTab === 'profile' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveTab('profile')}>
+          My Profile Settings
+        </button>
       </div>
 
       {/* Tab: Book a Room */}
       {activeTab === 'book' && (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="card">
             <h3 className="card-title">Search Room Availability</h3>
             <form onSubmit={handleSearch} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', alignItems: 'end' }}>
@@ -277,6 +349,19 @@ const CustomerPortal = () => {
               <button type="submit" className="btn btn-primary" style={{ height: '42px' }}>Search Availability</button>
             </form>
           </div>
+
+          {/* Hotel Information Card */}
+          {selectedHotelObj && (
+            <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '8px', borderLeft: '4px solid var(--accent)' }}>
+              <h4 style={{ margin: 0, color: 'var(--accent)', fontSize: '18px' }}>{selectedHotelObj.name} Details</h4>
+              <p style={{ margin: '4px 0', fontSize: '14px', lineHeight: '1.5' }}>{selectedHotelObj.description}</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '13px', color: 'var(--text-secondary)', marginTop: '8px' }}>
+                <div>📍 <strong>Address:</strong> {selectedHotelObj.address}, {selectedHotelObj.city}, {selectedHotelObj.state}, {selectedHotelObj.country}</div>
+                <div>📞 <strong>Phone:</strong> {selectedHotelObj.phone || 'N/A'}</div>
+                <div>✉️ <strong>Email:</strong> {selectedHotelObj.email || 'N/A'}</div>
+              </div>
+            </div>
+          )}
 
           {availableRooms.length > 0 && (
             <div className="card">
@@ -340,7 +425,7 @@ const CustomerPortal = () => {
                     <tr key={b.id}>
                       <td style={{ fontFamily: 'monospace', fontWeight: 'bold' }}>{b.booking_ref}</td>
                       <td>{new Date(b.check_in_date).toLocaleDateString()} to {new Date(b.check_out_date).toLocaleDateString()}</td>
-                      <td>{b.room_number || 'Assign at check-in'}</td>
+                      <td>{b.room_number ? `Room ${b.room_number}` : 'Assign at check-in'}</td>
                       <td>${b.total_amount}</td>
                       <td>
                         <span className={`badge badge-${
@@ -370,10 +455,19 @@ const CustomerPortal = () => {
 
       {/* Tab: My Complaints */}
       {activeTab === 'complaints' && (
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div className="card">
             <h3 className="card-title">File Support Ticket</h3>
             <form onSubmit={handleAddComplaint}>
+              <div className="form-group">
+                <label className="form-label">Select Hotel Branch</label>
+                <select className="form-control" value={selectedHotel} onChange={(e) => setSelectedHotel(e.target.value)} required>
+                  <option value="">-- Select Hotel --</option>
+                  {hotels.map((h) => (
+                    <option key={h.id} value={h.id}>{h.name}</option>
+                  ))}
+                </select>
+              </div>
               <div className="form-group">
                 <label className="form-label">Subject</label>
                 <input
@@ -407,6 +501,7 @@ const CustomerPortal = () => {
                 <thead>
                   <tr>
                     <th>Ref</th>
+                    <th>Hotel Branch</th>
                     <th>Subject</th>
                     <th>Status</th>
                     <th>Staff Assignee</th>
@@ -416,12 +511,13 @@ const CustomerPortal = () => {
                 <tbody>
                   {complaints.length === 0 ? (
                     <tr>
-                      <td colSpan="5" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No tickets registered.</td>
+                      <td colSpan="6" style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>No tickets registered.</td>
                     </tr>
                   ) : (
                     complaints.map((c) => (
                       <tr key={c.id}>
                         <td style={{ fontFamily: 'monospace' }}>{c.complaint_ref}</td>
+                        <td style={{ fontWeight: '600' }}>{c.hotel_name}</td>
                         <td style={{ fontWeight: '600' }}>{c.subject}</td>
                         <td>
                           <span className={`badge badge-${
@@ -430,7 +526,9 @@ const CustomerPortal = () => {
                           }`}>{c.status}</span>
                         </td>
                         <td>{c.assigned_staff_name || 'Awaiting assignment'}</td>
-                        <td>{c.resolution || 'Resolution pending'}</td>
+                        <td style={{ fontStyle: c.resolution ? 'normal' : 'italic', color: c.resolution ? 'var(--text-primary)' : 'var(--text-secondary)' }}>
+                          {c.resolution || 'Awaiting staff response'}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -438,6 +536,94 @@ const CustomerPortal = () => {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Tab: My Profile Settings */}
+      {activeTab === 'profile' && (
+        <div className="card" style={{ maxWidth: '700px' }}>
+          <h3 className="card-title">Manage Profile Details</h3>
+          <form onSubmit={handleUpdateProfile}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">First Name</label>
+                <input type="text" className="form-control" value={profileFirstName} onChange={(e) => setProfileFirstName(e.target.value)} required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Last Name</label>
+                <input type="text" className="form-control" value={profileLastName} onChange={(e) => setProfileLastName(e.target.value)} required />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">Phone Number</label>
+                <input type="tel" className="form-control" value={profilePhone} onChange={(e) => setProfilePhone(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Date of Birth</label>
+                <input type="date" className="form-control" value={profileDob} onChange={(e) => setProfileDob(e.target.value)} />
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">Nationality</label>
+                <input type="text" className="form-control" placeholder="e.g. Indian, American" value={profileNationality} onChange={(e) => setProfileNationality(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Preferred Room Type</label>
+                <select className="form-control" value={profilePreferredRoomType} onChange={(e) => setProfilePreferredRoomType(e.target.value)}>
+                  <option value="Standard">Standard Room</option>
+                  <option value="Deluxe">Deluxe Room</option>
+                  <option value="Suite">Executive Suite</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">Verification ID Type</label>
+                <select className="form-control" value={profileIdType} onChange={(e) => setProfileIdType(e.target.value)}>
+                  <option value="Passport">Passport</option>
+                  <option value="Aadhar">Aadhar Card</option>
+                  <option value="Driving License">Driving License</option>
+                  <option value="National ID">National Identity Card</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">ID Document Number</label>
+                <input type="text" className="form-control" placeholder="e.g. F9284102" value={profileIdNumber} onChange={(e) => setProfileIdNumber(e.target.value)} />
+              </div>
+            </div>
+
+            <h4 style={{ margin: '20px 0 10px', fontSize: '15px', borderBottom: '1px solid var(--border-color)', paddingBottom: '6px' }}>Contact Address</h4>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div className="form-group">
+                <label className="form-label">City / Town</label>
+                <input type="text" className="form-control" value={profileCity} onChange={(e) => setProfileCity(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Country</label>
+                <input type="text" className="form-control" value={profileCountry} onChange={(e) => setProfileCountry(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Street Address</label>
+              <input type="text" className="form-control" placeholder="123 Ocean Lane" value={profileAddress} onChange={(e) => setProfileAddress(e.target.value)} />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Special requests / Preferences</label>
+              <textarea className="form-control" rows="3" placeholder="e.g., Allergen warning, high floor preference..." value={profileSpecialRequests} onChange={(e) => setProfileSpecialRequests(e.target.value)}></textarea>
+            </div>
+
+            <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }}>
+              Save Profile Changes
+            </button>
+          </form>
         </div>
       )}
 
